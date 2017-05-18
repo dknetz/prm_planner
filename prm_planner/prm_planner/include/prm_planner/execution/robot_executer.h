@@ -35,6 +35,8 @@ public:
 	virtual double getPathLength();
 	virtual double getExecutedPathLength();
 
+	virtual void stopMotion();
+
 	virtual void init();
 	virtual void reset();
 

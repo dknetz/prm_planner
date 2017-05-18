@@ -30,6 +30,30 @@ class CollisionDetector
 {
 public:
 	/**
+	 * Struct which is used to allow each thread to create its own
+	 * collision detector instances. The instances are created only
+	 * once at the beginning.
+	 */
+	struct OpenMPCollisionDetectorStruct
+	{
+		//cdWithObject gets only initialized if objects is not empty!
+		boost::shared_ptr<CollisionDetector> cdWithObject, cdWithoutObject;
+
+		boost::shared_ptr<Robot> robot;
+		boost::shared_ptr<PlanningScene> planningScene;
+		std::vector<boost::shared_ptr<GraspableObject>> objects;
+
+		//used to initialize collision detectors
+		OpenMPCollisionDetectorStruct(OpenMPCollisionDetectorStruct& other);
+
+		//used for initialization
+		OpenMPCollisionDetectorStruct(boost::shared_ptr<Robot> robot,
+				boost::shared_ptr<PlanningScene> planningScene,
+				std::vector<boost::shared_ptr<GraspableObject>> objects = std::vector<boost::shared_ptr<GraspableObject>>());
+	};
+
+public:
+	/**
 	 * Creates a collision detector. 'robotInterface' will only
 	 * be used to get general information about robot description
 	 * and gripper joint state. If an 'octomap' is povided (i.e., no NULL)
@@ -37,8 +61,8 @@ public:
 	 * ignoreObjects can be used to specify objects, which will
 	 * be removed from the octomap.
 	 */
-	CollisionDetector(const boost::shared_ptr<Robot>& robotInterface,
-			const boost::shared_ptr<PlanningScene>& planningScene,
+	CollisionDetector(boost::shared_ptr<Robot> robotInterface,
+			boost::shared_ptr<PlanningScene> planningScene,
 			std::vector<boost::shared_ptr<GraspableObject>> ignoreObjects = std::vector<boost::shared_ptr<GraspableObject>>());
 	virtual ~CollisionDetector();
 

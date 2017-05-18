@@ -36,14 +36,13 @@ public:
 	Executer();
 	virtual ~Executer();
 
-	virtual bool executePath(const boost::shared_ptr<Path> path);
-
 	/**
-	 * Executes a robot motion of a single arm. The
-	 * method assumes, that the plan is given in the
-	 * planning frame of the corresponding arm.
+	 * This method takes a path and densifies it by adding additional
+	 * waypoints. Then the path is transformed into the robots frame.
+	 * Finally it splits the path into pieces such that special commands
+	 * as opening or closing the gripper are handled correspondingly.
 	 */
-//	virtual bool executeRobotPaths(const PathMap& paths);
+	virtual bool executePath(const boost::shared_ptr<Path> path);
 
 	/**
 	 * Executes a pre processed path map. This method
@@ -51,6 +50,11 @@ public:
 	 * stored path map.
 	 */
 	virtual bool executePreprocessedPathMap(const boost::shared_ptr<Path>& paths);
+
+	/**
+	 * Stops the robots' motion
+	 */
+	virtual void stopMotion() = 0;
 
 	virtual bool isGoalReached() const = 0;
 	virtual bool hasErrors() const = 0;

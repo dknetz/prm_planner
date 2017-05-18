@@ -46,7 +46,6 @@ public:
 	//ROS parameters
 	//=======================================
 	static bool verbose;				//verbose output if true
-	static bool executeMotion;			//should the plan be executed
 	static bool useShortcuts;			//use shortcuts (no planning, directly controlling)
 	static bool visualize;				//use visualization
 	static bool startPublishers;		//needs to be true (default) to start publishers
@@ -61,7 +60,7 @@ public:
 	static double maxPlanningTime;		//max time to wait for plan
 
 	//execution
-	static bool useHardwareInterfaceForExecution;
+	static parameters::ExecutionMode executionMode;
 
 	//octomap
 	static double octomapResolution;

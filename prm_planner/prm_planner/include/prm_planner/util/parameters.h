@@ -27,6 +27,19 @@ enum ImageMode {
 	Frequently
 };
 
+enum ExecutionMode {
+	//no execution is available
+	NoExecution,
+
+	//uses a provided hardware interface defined
+	//in a library (using the corresponding parameters)
+	HardwareInterface,
+
+	//uses a FollowJointTrajectory action client
+	//to publish the trajectory
+	FollowJointTrajectoryPublisher
+};
+
 //Config for PRMA* planner
 struct PRMConfig
 {
@@ -72,6 +85,7 @@ struct HandConfig
 
 	std::string name;
 	std::string jointStateTopic;
+	std::vector<std::string> jointNames;
 	GraspingAxis graspingAxis;
 	double minHeight;
 	std::string topic;

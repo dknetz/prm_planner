@@ -92,7 +92,6 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 		const double dt)
 {
 	ros::Time now = ros::Time(0);
-	ros::Time start = ros::Time::now();
 	ros::Duration deltaT(dt);
 	double lastCollisionCheck = 0;
 
@@ -142,10 +141,7 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 			lastCollisionCheck = 0;
 		}
 
-//		static int printed = 0;
-//		LOG_INFO_COND(printed++ < 10, "COLLISION AVOIDANCE DEACTIVATED!!!");
-
-//check if goal is reached
+		//check if goal is reached
 		goalReached = m_controller->isGoalReached();
 
 		if (goalReached)

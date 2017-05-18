@@ -24,7 +24,7 @@ namespace prm_planner
 {
 
 Robot::Robot(const std::string robotName) :
-				RobotArm(ParameterServer::robotConfigs[robotName].arms.begin()->second.arm),
+				RobotArm(ParameterServer::robotConfigs[robotName].arms.begin()->second.arm, true),
 				c_robotName(robotName)
 {
 	parameters::RobotConfig config = ParameterServer::robotConfigs[c_robotName];
@@ -38,6 +38,7 @@ Robot::Robot(const std::string robotName) :
 		GripperInterface::GripperInterfaceParameters params;
 		params.graspFrame = armConfig.arm.tfPrefix + "/" + armConfig.arm.tipLink;
 		params.jointStateTopic = armConfig.hand.jointStateTopic;
+		params.jointNames = armConfig.hand.jointNames;
 		params.name = armConfig.hand.name;
 		params.topic = armConfig.hand.topic;
 		params.dropPreDistance = armConfig.hand.dropPreDistance;
@@ -50,11 +51,11 @@ Robot::Robot(const std::string robotName) :
 	}
 }
 
-Robot::Robot(const Robot& other) :
-				RobotArm(other.c_armConfig),
-				c_robotName(other.c_robotName)
-{
-}
+//Robot::Robot(const Robot& other) :
+////				RobotArm(other.c_armConfig, false), //just a copy of the robot model without a real robot connection
+//				c_robotName(other.c_robotName)
+//{
+//}
 
 Robot::~Robot()
 {

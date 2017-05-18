@@ -3,13 +3,13 @@ names:
 problems:
     single_arm_iiwa:
         robot: iiwa
-        root_frame: iiwa/iiwa_0_link
+        root_frame: iiwa/iiwa_base_link
         plugin_package: prm_planner
         plugin_class: prm_planner::SingleArmProblemDefinition
         planning:
             planner_type: prm_a_star #prm_a_star database_cache
             constraint: xyzrpy
-            planning_frame: iiwa/iiwa_0_link
+            planning_frame: iiwa/iiwa_base_link
             prm:
                 filename: /home/kuhnerd/tmp/prm_iiwa_vrep_problem.prm
                 save: false

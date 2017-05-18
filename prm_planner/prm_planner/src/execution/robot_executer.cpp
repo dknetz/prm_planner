@@ -73,6 +73,14 @@ double RobotExecuter::getExecutedPathLength()
 	return m_controller->getExecutionPathLength();
 }
 
+void RobotExecuter::stopMotion()
+{
+	EXECUTER_LOCK();
+	m_pathSegments.clear();
+	m_currentPathSegment = 0;
+	m_controller->reset();
+}
+
 void RobotExecuter::init()
 {
 	m_controller->init();

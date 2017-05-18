@@ -63,7 +63,8 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 		boost::shared_ptr<Path>& path,
 		bool directConnectionRequired)
 {
-	PathPlanner::plan(currentJointPose, currentTaskPose, goalTaskPose, cd, path, directConnectionRequired);
+	if (!PathPlanner::plan(currentJointPose, currentTaskPose, goalTaskPose, cd, path, directConnectionRequired))
+		return false;
 
 	PRMView* view;
 	{
@@ -123,6 +124,7 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 	//we found no direct connection, if one is required return
 	if (directConnectionRequired)
 	{
+		LOG_INFO("Direct connection required, but no plan was found");
 		delete view;
 		return false;
 	}
@@ -147,7 +149,8 @@ bool PRMAStar::planSingleStartMultipleGoal(const KDL::JntArray& currentJointPose
 		boost::shared_ptr<CollisionDetector>& cd,
 		boost::shared_ptr<Path>& path)
 {
-	PathPlanner::planSingleStartMultipleGoal(currentJointPose, currentTaskPose, startNodeId, cd, path);
+	if (!PathPlanner::planSingleStartMultipleGoal(currentJointPose, currentTaskPose, startNodeId, cd, path))
+		return false;
 
 	PRMView* view;
 	{
@@ -373,31 +376,6 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 	AStarNodeMap openListElements;
 	AStarNodeMap closedList;
 	CounterMap nodeCounter;
-
-	//check collisions in current state
-	if (cd.get() != NULL)
-	{
-		int i = 0;
-		fcl_robot_model::RobotState state;
-		for (auto& it2 : m_robot->getJointNames())
-		{
-			state[it2] = currentJointPose(i++);
-		}
-		cd->robot->setRobotState(state);
-
-		if (cd->fcl->checkCollisions())
-		{
-			fcl_collision_detection::FCLWrapper::CollisionsVector col;
-			cd->fcl->getCollisions(col);
-			LOG_ERROR("Found collisions in start state between: ");
-			for (auto& it: col)
-			{
-				LOG_INFO("   - " << it.first->getName() << " " << it.second->getName());
-			}
-
-			return false;
-		}
-	}
 
 	//stop here if necessary
 	if (m_stopAllThreads)

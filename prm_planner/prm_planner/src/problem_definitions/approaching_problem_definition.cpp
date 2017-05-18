@@ -64,7 +64,7 @@ boost::shared_ptr<ProblemDefinition> ApproachingProblemDefinition::createApproac
 		//to plan independent to the other planners.
 		//We only activate the corresponding arm of
 		//the robot.
-		boost::shared_ptr<Robot> arm(new Robot(*m_robot));
+//		boost::shared_ptr<Robot> arm(new Robot(*m_robot));
 
 		//build config
 		parameters::ArmConfig ac = ParameterServer::robotConfigs[m_robot->c_robotName].arms[m_robot->getName()];
@@ -80,7 +80,7 @@ boost::shared_ptr<ProblemDefinition> ApproachingProblemDefinition::createApproac
 
 		//create problem definition
 		boost::shared_ptr<ProblemDefinition> pd(new ProblemDefinition());
-		pd->init(arm, ConstraintFactory::create(pc.constraint), m_plannerInterface, pc);
+		pd->init(m_robot, ConstraintFactory::create(pc.constraint), m_plannerInterface, pc);
 		m_approachingProblemDefinition = pd;
 
 		return pd;

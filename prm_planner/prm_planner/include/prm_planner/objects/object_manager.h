@@ -35,6 +35,7 @@ public:
 	void publish();
 	void updatePosesFromTF();
 	std::unordered_map<std::string, boost::shared_ptr<GraspableObject> >& getObjects();
+	void setNeglectObject(const std::vector<std::string>& neglectedObjects);
 
 	//returns true, if world has changed
 //	bool setRemoveObject(const std::string& name,

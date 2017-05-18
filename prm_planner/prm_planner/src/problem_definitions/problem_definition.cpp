@@ -46,7 +46,8 @@ namespace prm_planner
 pluginlib::ClassLoader<ProblemDefinition>* ProblemDefinition::s_loader = NULL;
 
 ProblemDefinition::ProblemDefinition() :
-				m_objectManager(NULL)
+				m_objectManager(NULL),
+				m_transformationPlanningToArm(Eigen::Affine3d::Identity())
 {
 }
 
@@ -295,7 +296,6 @@ bool ProblemDefinition::planGrasping(const std::string& object,
 		boost::shared_ptr<Path>& path)
 {
 	const int steps = 100;
-	const int ompThread = 4;
 
 	//get object pose
 	boost::shared_ptr<GraspableObject> obj = m_objectManager->getObject(object);
@@ -347,24 +347,15 @@ bool ProblemDefinition::planGrasping(const std::string& object,
 	KDL::JntArray currentPose = m_robot->getKDLJointState();
 
 	//setup threads
-	omp_set_num_threads(ompThread);
-	std::vector<boost::shared_ptr<CollisionDetector>> cdsWithObject(ompThread);
-	std::vector<boost::shared_ptr<CollisionDetector>> cdsWithoutObject(ompThread);
-
-	m_mutex.lock_shared();
-	for (size_t i = 0; i < ompThread; ++i)
-	{
-		cdsWithObject[i].reset(new CollisionDetector(m_robot, m_planningScene));
-		cdsWithoutObject[i].reset(new CollisionDetector(m_robot, m_planningScene, { obj }));
-	}
-	m_mutex.unlock_shared();
-
 	boost::atomic_bool found(false);
 	FeasibilityChecker feasibilityChecker(m_robot);
 
+	PD_READ_LOCK();
+	CollisionDetector::OpenMPCollisionDetectorStruct cds(m_robot, m_planningScene, { obj });
+
 	ais_util::ProgressBar progress("Planning", steps);
 
-#pragma omp parallel for shared(found) schedule(dynamic)
+#pragma omp parallel for shared(found) schedule(dynamic) firstprivate(cds)
 	for (int i = 0; i < steps; ++i)
 	{
 		progress.increment();
@@ -372,7 +363,7 @@ bool ProblemDefinition::planGrasping(const std::string& object,
 		if (found)
 			continue;
 
-		boost::shared_ptr<Path> pathToObject, pathToPost;
+		boost::shared_ptr<Path> pathToObject, pathToPost, pathToCurrent;
 		boost::shared_ptr<Path> tmpPath;
 
 		int threadNum = omp_get_thread_num();
@@ -382,30 +373,37 @@ bool ProblemDefinition::planGrasping(const std::string& object,
 		obj->sampleGraspPose(prePose, pose, postPose, hc, gripper);
 
 		//check feasibility
-		if (!feasibilityChecker.check(prePose, cdsWithObject[threadNum])
-				|| !feasibilityChecker.check(pose, cdsWithoutObject[threadNum])
-				|| !feasibilityChecker.check(postPose, cdsWithoutObject[threadNum]))
+		if (!feasibilityChecker.check(prePose, cds.cdWithObject)
+				|| !feasibilityChecker.check(pose, cds.cdWithoutObject)
+				|| !feasibilityChecker.check(postPose, cds.cdWithoutObject))
 			continue;
 
 		if (found)
 			continue;
 
 		//plan to pre pose
-		if (!m_planner->plan(currentPose, currentTaskPose, prePose, cdsWithObject[threadNum], tmpPath))
+		if (!m_planner->plan(currentPose, currentTaskPose, prePose, cds.cdWithObject, tmpPath))
 			continue;
 
 		if (found)
 			continue;
 
 		//compute pre -> pose
-		if (!m_planner->plan(tmpPath->back().jointPose, tmpPath->back().pose, pose, cdsWithoutObject[threadNum], pathToObject, true))
+		if (!m_planner->plan(tmpPath->back().jointPose, tmpPath->back().pose, pose, cds.cdWithoutObject, pathToObject, true))
 			continue;
 
 		if (found)
 			continue;
 
 		//compute pose -> post
-		if (!m_planner->plan(pathToObject->back().jointPose, pathToObject->back().pose, postPose, cdsWithoutObject[threadNum], pathToPost, true))
+		if (!m_planner->plan(pathToObject->back().jointPose, pathToObject->back().pose, postPose, cds.cdWithoutObject, pathToPost, true))
+			continue;
+
+		if (found)
+			continue;
+
+		//compute post -> current
+		if (!m_planner->plan(pathToPost->back().jointPose, pathToPost->back().pose, currentTaskPose, cds.cdWithoutObject, pathToCurrent, true))
 			continue;
 
 		if (found)
@@ -425,6 +423,7 @@ bool ProblemDefinition::planGrasping(const std::string& object,
 		tmpPath->append(wpClose);
 
 		tmpPath->append(*pathToPost);
+		tmpPath->append(*pathToCurrent);
 
 		tmpPath->cleanPath();
 
@@ -461,7 +460,7 @@ bool ProblemDefinition::planDropping(const std::string& objectName,
 	}
 
 	const std::string name = gripper->getCurrentObject();
-	if (objectName.empty())
+	if (name.empty())
 	{
 		LOG_ERROR("There is no object in the gripper");
 		return false;
@@ -470,7 +469,7 @@ bool ProblemDefinition::planDropping(const std::string& objectName,
 	boost::shared_ptr<GraspableObject> object = m_objectManager->getObject(name);
 	if (object.get() == NULL)
 	{
-		LOG_ERROR("There is no or an unknown object in the gripper!");
+		LOG_ERROR("There is an unknown object in the gripper!");
 		return false;
 	}
 
@@ -483,17 +482,6 @@ bool ProblemDefinition::planDropping(const std::string& objectName,
 	//not optimal yet. so: TODO: implement a flag to find a pose
 	//automatically.
 	const bool automaticSearch = goalPos.isZero();
-
-	//setup threads
-	omp_set_num_threads(ompThread);
-	std::vector<boost::shared_ptr<CollisionDetector>> cds(ompThread);
-
-	m_mutex.lock_shared();
-	for (size_t i = 0; i < ompThread; ++i)
-	{
-		cds[i].reset(new CollisionDetector(m_robot, m_planningScene));
-	}
-	m_mutex.unlock_shared();
 
 	boost::shared_ptr<Path> bestPath;
 	double bestLength = std::numeric_limits<double>::max();
@@ -518,13 +506,21 @@ bool ProblemDefinition::planDropping(const std::string& objectName,
 		goalPos = goalPose.translation();
 	}
 
-	ais_util::ProgressBar progress("Planning", steps);
-
 	boost::atomic_int found(0);
 
+	//setup threads
+//	omp_set_num_threads(ompThread);
+
+	//create feasibility checker
 	FeasibilityChecker feasibilityChecker(m_robot);
 
-#pragma omp parallel for shared(found, bestLength, bestPath) schedule(dynamic)
+	//create collision detectors
+	PD_READ_LOCK();
+	CollisionDetector::OpenMPCollisionDetectorStruct cd(m_robot, m_planningScene);
+
+	ais_util::ProgressBar progress("Planning", steps);
+
+#pragma omp parallel for shared(found, bestLength, bestPath) schedule(dynamic) firstprivate(cd)
 	for (int i = 0; i < steps; ++i) // && !boost::this_thread::interruption_requested()
 	{
 		//get only 5 best results
@@ -558,19 +554,19 @@ bool ProblemDefinition::planDropping(const std::string& objectName,
 				object->sampleDropPose(prePose, pose, postPose, goalPos, m_robot->getGripper());
 
 				//check feasibility
-				if (!feasibilityChecker.check(prePose, cds[threadNum])
-						|| !feasibilityChecker.check(pose, cds[threadNum])
-						|| !feasibilityChecker.check(postPose, cds[threadNum]))
+				if (!feasibilityChecker.check(prePose, cd.cdWithoutObject)
+						|| !feasibilityChecker.check(pose, cd.cdWithoutObject)
+						|| !feasibilityChecker.check(postPose, cd.cdWithoutObject))
 					continue;
 
 				//plan to pre pose
-				if (!m_planner->plan(currentPose, currentTaskPose, prePose, cds[threadNum], tmpPath))
+				if (!m_planner->plan(currentPose, currentTaskPose, prePose, cd.cdWithoutObject, tmpPath))
 					continue;
 
-				if (!m_planner->plan(tmpPath->back().jointPose, tmpPath->back().pose, pose, cds[threadNum], pathToObject, true))
+				if (!m_planner->plan(tmpPath->back().jointPose, tmpPath->back().pose, pose, cd.cdWithoutObject, pathToObject, true))
 					continue;
 
-				if (!m_planner->plan(pathToObject->back().jointPose, pathToObject->back().pose, postPose, cds[threadNum], pathToPost, true))
+				if (!m_planner->plan(pathToObject->back().jointPose, pathToObject->back().pose, postPose, cd.cdWithoutObject, pathToPost, true))
 					continue;
 
 				double length = tmpPath->getPathLength();
@@ -744,7 +740,11 @@ Eigen::Affine3d ProblemDefinition::samplePose()
 	Eigen::Affine3d pose;
 	tf::transformKDLToEigen(x, pose);
 
-	Eigen::Affine3d t = m_plannerInterface->getTransformation(m_robot->getRootFrame(), c_config.planningFrame);
+	Eigen::Affine3d t;
+	if (!ais_ros::RosBaseInterface::getRosTransformationWithResult(m_robot->getRootFrame(), c_config.planningFrame, t))
+	{
+		t.setIdentity();
+	}
 
 	pose = t * pose;
 
@@ -757,9 +757,11 @@ Eigen::Affine3d ProblemDefinition::getCurrentTaskPose()
 {
 	Eigen::Affine3d pose;
 	m_robot->getCurrentFK(pose);
-	m_transformationPlanningToArm = ais_ros::RosBaseInterface::getRosTransformation(m_robot->getRootFrame(), c_config.planningFrame);
-	pose = m_transformationPlanningToArm * pose;
-	return pose;
+	if (!ais_ros::RosBaseInterface::getRosTransformationWithResult(m_robot->getRootFrame(), c_config.planningFrame, m_transformationPlanningToArm))
+	{
+		m_transformationPlanningToArm.setIdentity();
+	}
+	return m_transformationPlanningToArm * pose;
 }
 
 std::vector<boost::shared_ptr<InteractiveMarker> > ProblemDefinition::getInteractiveMarkers()

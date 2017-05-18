@@ -31,7 +31,9 @@ GraspableObject::GraspableObject(const GraspableObject::ObjectParameters& parame
 				m_height(0),
 				m_graspType(Cylinder),
 				m_graspingPosesComputed(false),
-				m_dropingPosesComputed(false)
+				m_dropingPosesComputed(false),
+				m_doUpdate(true),
+				m_activeObject(false)
 {
 	loadModel();
 	ros::NodeHandle n;
@@ -458,6 +460,16 @@ double GraspableObject::getHeightBelowCenter() const
 	return m_heightBelowCenter;
 }
 
+bool GraspableObject::isDoUpdate() const
+{
+	return m_doUpdate;
+}
+
+void GraspableObject::setDoUpdate(bool doUpdate)
+{
+	m_doUpdate = doUpdate;
+}
+
 bool GraspableObject::isActive() const
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
@@ -715,6 +727,10 @@ void GraspableObject::loadModel()
 void GraspableObject::updatePoseFromTF()
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
+	if (!m_doUpdate)
+		return;
+
 	m_activeObject = ais_ros::RosBaseInterface::getRosTransformationWithResult(c_params.objectFrameName, c_params.frame, m_pose);
 }
 
@@ -739,6 +755,9 @@ void GraspableObject::print()
 void GraspableObject::updateBoundingBox()
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
+	if (!m_doUpdate)
+		return;
 
 	std::vector<Eigen::Vector3d> pos;
 	pos.reserve(m_vertices.size());
@@ -797,6 +816,16 @@ void GraspableObject::computeBoundingBox(const std::vector<Eigen::Vector3d>& poi
 			maxBBPoint.z() = it.z();
 	}
 
+}
+
+void GraspableObject::lock()
+{
+	m_mutex.lock();
+}
+
+void GraspableObject::unlock()
+{
+	m_mutex.unlock();
 }
 
 } /* namespace prm_planner */

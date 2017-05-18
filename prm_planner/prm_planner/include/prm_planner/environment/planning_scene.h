@@ -13,6 +13,7 @@
 #include <ais_definitions/class.h>
 #include <ais_point_cloud/point_cloud.h>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 #include <octomap_msgs/Octomap.h>
 #include <ros/publisher.h>
 #include <ros/service_server.h>
@@ -46,6 +47,9 @@ public:
 
 	void publish();
 
+	void lock();
+	void unlock();
+
 public:
 	boost::shared_ptr<octomap::OcTree> octomap;
 	boost::shared_ptr<ais_point_cloud::RGBDImage> rgbd;
@@ -64,6 +68,8 @@ private:
 				const Eigen::Vector3d& prmCenter);
 
 private:
+	boost::recursive_mutex m_mutex;
+
 	//publishers
 	ros::Publisher m_pubPointCloud;
 	ros::Publisher m_pubOctomap;

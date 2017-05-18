@@ -12,6 +12,7 @@ add_service_files(
     FILES SetState.srv 
         GetImage.srv
         ModifyPlanningScene.srv
+        SetObjectPoseType.srv
 )
 
 add_message_files(

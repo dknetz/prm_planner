@@ -82,8 +82,23 @@ void ObjectManager::updatePosesFromTF()
 	boost::mutex::scoped_lock lock(m_mutex);
 	for (auto& it : m_objects)
 	{
-		it.second->updatePoseFromTF();
-		it.second->updateBoundingBox();
+		if (it.second->isDoUpdate())
+		{
+			it.second->updatePoseFromTF();
+			it.second->updateBoundingBox();
+		}
+	}
+}
+
+void ObjectManager::setNeglectObject(const std::vector<std::string>& neglectedObjects)
+{
+	boost::mutex::scoped_lock lock(m_mutex);
+	LOG_INFO("Setting object updates:");
+	for (auto& it : m_objects)
+	{
+		bool update = std::find(neglectedObjects.begin(), neglectedObjects.end(), it.first) == neglectedObjects.end();
+		it.second->setDoUpdate(update);
+		LOG_INFO("  - " << it.first << ": " << (update ? "true" : "false"));
 	}
 }
 

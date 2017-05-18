@@ -1,5 +1,4 @@
 general:
-    execute_motion: true
     use_shortcuts: true
     verbose: true
     visualize: true
@@ -8,10 +7,11 @@ general:
     start_ros_spinner: true
     start_ros_publishers: true
     start_ros_subscribers: true
+    one_image_mode: true
 planning:
-    max_planning_time: 4
+    max_planning_time: 60
 execution:
-    mode: 1
+    mode: 0
 octomap:
     resolution: 0.025
     prob_hit: 0.7

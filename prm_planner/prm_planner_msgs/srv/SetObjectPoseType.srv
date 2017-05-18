@@ -1,0 +1,8 @@
+int8 UPDATE_OBJECT_POSES=1
+int8 USE_CURRENT_POSE_WITHOUT_UPDATE=2
+int8 USE_OBJECT_POSES_OF_NEXT_PLANNING_WITHOUT_UPDATE=3
+
+int8 mode 
+string[] neglectedObjects
+---
+bool success

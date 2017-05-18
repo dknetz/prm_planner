@@ -36,6 +36,8 @@ PlanningScene::~PlanningScene()
 
 void PlanningScene::init()
 {
+	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
 	initOctomap();
 	initROS();
 
@@ -64,6 +66,8 @@ void PlanningScene::initROS()
 
 void PlanningScene::initOctomap()
 {
+	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
 	octomap.reset(new octomap::OcTree(ParameterServer::octomapResolution));
 	octomap->setProbHit(ParameterServer::octomapProbHit);
 	octomap->setProbMiss(ParameterServer::octomapProbMiss);
@@ -73,6 +77,8 @@ void PlanningScene::initOctomap()
 
 bool PlanningScene::initFromPointCloud()
 {
+	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
 	if (!rgbd)
 		return false;
 
@@ -111,6 +117,8 @@ bool PlanningScene::initFromPointCloud()
 
 void PlanningScene::updateOctomap(const ais_point_cloud::MyPointCloudP cloud)
 {
+	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
 	initOctomap();
 
 	Eigen::Vector3d originPos =
@@ -260,6 +268,8 @@ void PlanningScene::publish()
 bool PlanningScene::callbackModifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
 		prm_planner_msgs::ModifyPlanningScene::Response& res)
 {
+	boost::recursive_mutex::scoped_lock lock(m_mutex);
+
 	//add
 	if (req.mode == prm_planner_msgs::ModifyPlanningScene::Request::ADD_OBJECT)
 	{
@@ -317,4 +327,15 @@ void PlanningScene::filterPointCloud(const ais_point_cloud::MyPointCloudP& cloud
 	}
 }
 
+void PlanningScene::lock()
+{
+	m_mutex.lock();
+}
+
+void PlanningScene::unlock()
+{
+	m_mutex.unlock();
+}
+
 } /* namespace prm_planner */
+

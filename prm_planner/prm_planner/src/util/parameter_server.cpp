@@ -53,7 +53,6 @@ bool ParameterServer::m_receiveImage = true;
 bool ParameterServer::m_imageReceived = false;
 
 //general
-bool ParameterServer::executeMotion = true;
 bool ParameterServer::useShortcuts = true;
 bool ParameterServer::visualize = true;
 bool ParameterServer::verbose = true;
@@ -68,7 +67,7 @@ parameters::ImageMode ParameterServer::oneImageMode = parameters::Frequently;
 double ParameterServer::maxPlanningTime = -1; //inf
 
 //execution
-bool ParameterServer::useHardwareInterfaceForExecution = false; //use follow joint trajectory
+parameters::ExecutionMode ParameterServer::executionMode = parameters::NoExecution;
 
 //prm
 double ParameterServer::octomapResolution = 0;
@@ -117,7 +116,6 @@ bool ParameterServer::loadParameters()
 
 	//general
 	GET_PARAMETER_ERROR("general/verbose", verbose);
-	GET_PARAMETER_ERROR("general/execute_motion", executeMotion);
 	GET_PARAMETER_ERROR("general/use_shortcuts", useShortcuts);
 	GET_PARAMETER_ERROR("general/visualize", visualize);
 	GET_PARAMETER_ERROR("general/start_ros_spinner", startRosSpinner);
@@ -143,7 +141,12 @@ bool ParameterServer::loadParameters()
 	GET_PARAMETER_ERROR("planning/max_planning_time", maxPlanningTime);
 
 	//execution
-	GET_PARAMETER_ERROR("execution/use_hardware_interface_for_execution", useHardwareInterfaceForExecution);
+	GET_PARAMETER_DEFAULT_ENUM("execution/mode", executionMode, parameters::ExecutionMode, parameters::NoExecution);
+
+	if (executionMode == parameters::NoExecution)
+	{
+		LOG_INFO("No execution will happen!");
+	}
 
 	//octomap
 	GET_PARAMETER_ERROR("octomap/resolution", octomapResolution);
@@ -172,7 +175,7 @@ bool ParameterServer::loadRobotParameters()
 {
 	ros::NodeHandle n("robots");
 
-	std::vector<std::string> robots, arms;
+	std::vector<std::string> robots, arms, handJointNames;
 	std::string description, startLink, endLink, tfPrefix, collisionMatrix, controllerConfig;
 	std::string handName, handJointStateTopic, handTopic, handInterface, handClass;
 	double handGraspPreDistance, handGraspRadius, handDropPreDistance, handGraspPostHeight;
@@ -210,14 +213,14 @@ bool ParameterServer::loadRobotParameters()
 			GET_PARAMETER_DEFAULT("robots/" + it + "/arms/" + it2 + "/tool_frame", useToolFrame, false);
 			GET_PARAMETER_DEFAULT("robots/" + it + "/arms/" + it2 + "/tf_prefix", tfPrefix, "");
 
-			//use hardware interface
-			if (!useHardwareInterfaceForExecution)
+			//follow joint trajectory action client
+			if (executionMode == parameters::FollowJointTrajectoryPublisher)
 			{
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/follow_joint_trajectory_topic", followJointTrajectoryTopic);
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/joint_state_topic", jointStateTopic);
 			}
 			//use hw interface class which needs to be provided as a ros plugin
-			else
+			else if (executionMode == parameters::HardwareInterface)
 			{
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/interface_package", interfacePackage);
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/interface_class", interfaceClass);
@@ -228,6 +231,7 @@ bool ParameterServer::loadRobotParameters()
 			if (!handName.empty())
 			{
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/hand/joint_state_topic", handJointStateTopic);
+				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/hand/joint_names", handJointNames);
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/hand/min_grasping_height", graspingMinHeight);
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/hand/topic", handTopic);
 				GET_PARAMETER_ERROR("robots/" + it + "/arms/" + it2 + "/hand/topic", handTopic);
@@ -264,7 +268,7 @@ bool ParameterServer::loadRobotParameters()
 			armBase.useToolFrame = useToolFrame;
 			armBase.robotDescriptionParam = description;
 			armBase.tfPrefix = tfPrefix;
-			armBase.useHWInterface = useHardwareInterfaceForExecution;
+			armBase.executionInterface = (ArmExecutionMode)executionMode;
 			armBase.collisionMatrixFile = collisionMatrix;
 			armBase.controllerConfig = controllerConfig;
 			armBase.followJointTrajectoryTopic = followJointTrajectoryTopic;
@@ -282,6 +286,7 @@ bool ParameterServer::loadRobotParameters()
 			{
 				arm.hand.name = handName;
 				arm.hand.jointStateTopic = handJointStateTopic;
+				arm.hand.jointNames = handJointNames;
 				arm.hand.minHeight = graspingMinHeight;
 				arm.hand.topic = handTopic;
 				arm.hand.interfacePackage = handInterface;

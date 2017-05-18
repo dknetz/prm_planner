@@ -19,6 +19,15 @@ robots:
                 hand:
                     name: sdh2
                     joint_state_topic: /iiwa/joint_states
+                    joint_names:
+                    - sdh2_knuckle_joint
+                    - sdh2_finger_12_joint
+                    - sdh2_finger_13_joint
+                    - sdh2_finger_21_joint
+                    - sdh2_finger_22_joint
+                    - sdh2_finger_23_joint
+                    - sdh2_thumb_2_joint
+                    - sdh2_thumb_3_joint
                     min_grasping_height: 0.1
                     topic: /iiwa/sdh_action
                     interface_package: schunk_sdh2

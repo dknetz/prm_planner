@@ -23,8 +23,29 @@
 namespace prm_planner
 {
 
-CollisionDetector::CollisionDetector(const boost::shared_ptr<Robot>& robotInterface,
-		const boost::shared_ptr<PlanningScene>& planningScene,
+CollisionDetector::OpenMPCollisionDetectorStruct::OpenMPCollisionDetectorStruct(OpenMPCollisionDetectorStruct& other) :
+				robot(other.robot),
+				planningScene(other.planningScene),
+				objects(other.objects)
+{
+	cdWithObject.reset(new CollisionDetector(other.robot, other.planningScene));
+	if (!other.objects.empty())
+	{
+		cdWithoutObject.reset(new CollisionDetector(other.robot, other.planningScene, other.objects));
+	}
+}
+
+CollisionDetector::OpenMPCollisionDetectorStruct::OpenMPCollisionDetectorStruct(boost::shared_ptr<Robot> robot,
+		boost::shared_ptr<PlanningScene> planningScene,
+		std::vector<boost::shared_ptr<GraspableObject>> objects) :
+				robot(robot),
+				planningScene(planningScene),
+				objects(objects)
+{
+}
+
+CollisionDetector::CollisionDetector(boost::shared_ptr<Robot> robotInterface,
+		boost::shared_ptr<PlanningScene> planningScene,
 		std::vector<boost::shared_ptr<GraspableObject>> ignoreObjects)
 {
 	fcl.reset(new fcl_collision_detection::FCLWrapper);
@@ -65,7 +86,9 @@ CollisionDetector::CollisionDetector(const boost::shared_ptr<Robot>& robotInterf
 			boost::shared_ptr<ProblemDefinition> pd = ProblemDefinitionManager::getInstance()->getProblemDefinition();
 
 			//create copy of octomap
+			planningScene->lock();
 			boost::shared_ptr<octomap::OcTree> octomapCopy(new octomap::OcTree(*planningScene->octomap));
+			planningScene->unlock();
 
 			//remove objects from octomap
 			for (auto& it : ignoreObjects)
@@ -84,6 +107,7 @@ CollisionDetector::CollisionDetector(const boost::shared_ptr<Robot>& robotInterf
 		}
 
 		//add objects
+		planningScene->lock();
 		for (auto& o : planningScene->objects)
 		{
 			boost::shared_ptr<fcl_collision_detection::PhysicalObject> fclObject;
@@ -107,6 +131,7 @@ CollisionDetector::CollisionDetector(const boost::shared_ptr<Robot>& robotInterf
 
 			fcl->addObject(fclObject, o.second->m_collisionMatrix.checkAllCollisions());
 		}
+		planningScene->unlock();
 	}
 }
 

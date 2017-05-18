@@ -11,7 +11,7 @@ general:
 planning:
     max_planning_time: 10
 execution:
-    use_hardware_interface_for_execution: true
+    mode: 1
 octomap:
     resolution: 0.025
     prob_hit: 0.7

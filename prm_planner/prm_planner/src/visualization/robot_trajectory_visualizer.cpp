@@ -20,9 +20,11 @@ RobotTrajectoryVisualizer::RobotTrajectoryVisualizer(boost::shared_ptr<Robot> ro
 		const std::string& type) :
 				m_robot(robot),
 				m_type(type),
-				m_nodeHandle("/prm_planner"),
 				m_counter(0)
 {
+	std::hash<std::string> hash;
+	m_uniqueName = hash(m_nodeHandle.getNamespace());
+
 	initRobotModel(m_robot->getRobotDescription(), m_robot->getRobotDescription() + "_" + m_type, m_type,
 			m_robot, m_statePublisher, m_nodeHandle);
 }
@@ -82,7 +84,7 @@ void RobotTrajectoryVisualizer::initRobotModel(const std::string& robotDescripti
 		boost::replace_all(desc, "name=\"" + it.second.segment.getName(), "name=\"" + it.second.segment.getName() + "_" + prependString);
 		boost::replace_all(desc, "link=\"" + it.second.segment.getName(), "link=\"" + it.second.segment.getName() + "_" + prependString);
 		boost::replace_all(desc, "name=\"" + it.second.segment.getJoint().getName(),
-				"name=\"" + it.second.segment.getJoint().getName() + "_" + prependString);
+				"name=\"" + it.second.segment.getJoint().getName() + "_" + prependString + "_" + std::to_string(m_uniqueName));
 	}
 
 	statePublisher = new RobotStatePublisher(tree);
@@ -129,12 +131,12 @@ void RobotTrajectoryVisualizer::update()
 	}
 
 	//publish joint states of the robot
-	m_statePublisher->publishTransforms(joints, ros::Time::now(), m_robot->getName(), "_" + m_type);
-	m_statePublisher->publishFixedTransforms(m_robot->getName(), "_" + m_type);
+	m_statePublisher->publishTransforms(joints, ros::Time::now(), m_robot->getName(), "_" + m_type + "_" + std::to_string(m_uniqueName));
+	m_statePublisher->publishFixedTransforms(m_robot->getName(), "_" + m_type + "_" + std::to_string(m_uniqueName));
 
 	//publish static identy transformation between robot
 	//and fake robot to be able to show the fake robot in rviz
-	m_br.sendTransform(tf::StampedTransform(baseTF, ros::Time::now(), m_robot->getRootFrame(), m_robot->getRootFrame() + "_" + m_type));
+	m_br.sendTransform(tf::StampedTransform(baseTF, ros::Time::now(), m_robot->getRootFrame(), m_robot->getRootFrame() + "_" + m_type + "_" + std::to_string(m_uniqueName)));
 }
 
 void RobotTrajectoryVisualizer::run()

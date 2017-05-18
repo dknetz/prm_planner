@@ -119,7 +119,7 @@ int main(int argc,
 
 		//we don't need the goal action server
 		ParameterServer::startSubscribers = false;
-		ParameterServer::executeMotion = false;
+		ParameterServer::executionMode = parameters::NoExecution;
 		ParameterServer::visualize = false;
 
 		PRMPlanner::PlannerParameters params;

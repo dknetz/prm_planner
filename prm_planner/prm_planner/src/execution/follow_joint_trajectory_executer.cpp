@@ -42,22 +42,12 @@ bool FollowJointTrajectoryExecuter::executePath(const boost::shared_ptr<Path> pa
 {
 	LOG_INFO("Execute Task Path");
 
+	EXECUTER_LOCK();
 	m_goalReached = false;
 	m_newDataReceived = true;
 	return Executer::executePath(path);
 
 }
-
-//bool FollowJointTrajectoryExecuter::executeRobotPaths(const PathMap& paths)
-//{
-//	LOG_INFO("Execute Robot Path");
-//
-//	EXECUTER_LOCK();
-//	bool result = Executer::executeRobotPaths(paths);
-//	m_goalReached = false;
-//	m_newDataReceived = true;
-//	return result;
-//}
 
 bool FollowJointTrajectoryExecuter::executePreprocessedPathMap(const boost::shared_ptr<Path>& path)
 {
@@ -70,6 +60,14 @@ bool FollowJointTrajectoryExecuter::executePreprocessedPathMap(const boost::shar
 	return result;
 }
 
+void FollowJointTrajectoryExecuter::stopMotion()
+{
+	EXECUTER_LOCK();
+	m_robot->stopMotion();
+	m_goalReached = true;
+	m_pathSegments.clear();
+}
+
 bool FollowJointTrajectoryExecuter::isGoalReached() const
 {
 	return m_goalReached;
@@ -77,7 +75,8 @@ bool FollowJointTrajectoryExecuter::isGoalReached() const
 
 bool FollowJointTrajectoryExecuter::hasErrors() const
 {
-	return false;
+	EXECUTER_LOCK();
+	return m_pathSegments.empty() && !m_goalReached;
 }
 
 double FollowJointTrajectoryExecuter::getPathLength()
@@ -148,7 +147,7 @@ void FollowJointTrajectoryExecuter::run()
 
 //			LOG_INFO("Got "<<pathSegments.begin()->second.size());
 
-			//wait for result
+//wait for result
 			while (!m_goalReached && !boost::this_thread::interruption_requested())
 			{
 				//we got a new path, so we stop current execution here
@@ -186,7 +185,7 @@ void FollowJointTrajectoryExecuter::run()
 					m_controller->updateFromRobotPath(pathSegments, currentIndex, pathSegments.size() > 1);
 
 					//check motion and compute trajectory
-					if (m_controller->canControl(7000, 0.01))
+					if (m_controller->canControl(500000, 0.01))
 					{
 						//get trajectory
 						ArmJointPath path;
@@ -220,7 +219,12 @@ void FollowJointTrajectoryExecuter::run()
 					}
 					else
 					{
+						m_mutex.lock();
+						m_goalReached = false;
+						m_pathSegments.clear();
+						m_mutex.unlock();
 						LOG_ERROR("Cannot execute trajectory!");
+						break;
 					}
 				}
 
@@ -256,7 +260,6 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 	Eigen::Quaterniond orientation;
 	KDL::JntArray joints;
 	double currentTime;
-	boost::shared_ptr<RobotArm> arm;
 	const double newWaypointLin = 0.03;
 	const double newWaypointAng = 0.05;
 
@@ -265,10 +268,10 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 		return;
 
 	//get parameters
-	parameters::ControllerConfig controllerParams = ParameterServer::controllerConfigs[arm->getParameters().controllerConfig];
+	parameters::ControllerConfig controllerParams = ParameterServer::controllerConfigs[m_robot->getParameters().controllerConfig];
 
 	//create ROS message
-	goalMessage.trajectory.joint_names = arm->getJointNames();
+	goalMessage.trajectory.joint_names = m_robot->getJointNames();
 	trajectory_msgs::JointTrajectoryPoint jointState;
 
 	//old poses
@@ -280,7 +283,7 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 
 	//start state
 	convert(wpStart.positions, jointState.positions);
-	jointState.velocities = std::vector<double>(wpStart.positions.rows(), 0);
+	jointState.velocities = std::vector<double>(wpStart.positions.rows(), wpStart.velocityAng);
 	jointState.time_from_start.fromSec(oldTime);
 	goalMessage.trajectory.points.push_back(jointState);
 
@@ -301,11 +304,11 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 		double velAng = 1.0;
 		double velLin = 1.0;
 
-		if (wp.velocityAng > 0)
-			velAng = wp.velocityAng / controllerParams.maxTaskVelAng;
-
-		if (wp.velocityLin > 0)
-			velLin = wp.velocityLin / controllerParams.maxTaskVelPos;
+//		if (wp.velocityAng > 0)
+//			velAng = wp.velocityAng / controllerParams.maxTaskVelAng;
+//
+//		if (wp.velocityLin > 0)
+//			velLin = wp.velocityLin / controllerParams.maxTaskVelPos;
 
 		const double newWaypointThresholdAngular = velAng * newWaypointAng;
 		const double newWaypointThresholdPos = velLin * newWaypointLin;
@@ -322,7 +325,7 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 			//set message
 			convert(wp.positions, jointState.positions);
 //				convert(vel, jointState.velocities);
-			jointState.velocities = std::vector<double>(vel.rows(), 0);
+			jointState.velocities = std::vector<double>(vel.rows(), wp.velocityAng);
 			jointState.time_from_start.fromSec(currentTime);
 			goalMessage.trajectory.points.push_back(jointState);
 
@@ -337,7 +340,7 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 	//goal state
 	TrajectoryWaypoint& wpGoal = path.back();
 	convert(wpGoal.positions, jointState.positions);
-	jointState.velocities = std::vector<double>(wpGoal.positions.rows(), 0);
+	jointState.velocities = std::vector<double>(wpGoal.positions.rows(), wpGoal.velocityAng);
 	jointState.time_from_start.fromSec(wpGoal.timeFromStart.toSec());
 	goalMessage.trajectory.points.push_back(jointState);
 

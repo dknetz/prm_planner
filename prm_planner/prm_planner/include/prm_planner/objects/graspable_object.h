@@ -62,6 +62,8 @@ public:
 	double getRadius() const;
 	double getHeightAboveCenter() const;
 	double getHeightBelowCenter() const;
+	bool isDoUpdate() const;
+	void setDoUpdate(bool doUpdate);
 
 	bool isActive() const;
 	bool isInGripper(const boost::shared_ptr<GripperInterface>& gripper);
@@ -77,6 +79,9 @@ public:
 			const Eigen::Vector3d goalPos,
 			const boost::shared_ptr<GripperInterface> gripper);
 
+	void lock();
+	void unlock();
+
 	const ObjectParameters c_params;
 	const parameters::DroppingConfig c_droppingConfig;
 
@@ -90,6 +95,8 @@ private:
 private:
 	mutable boost::recursive_mutex m_mutex;
 	std::vector<Eigen::Vector3d> m_vertices;
+
+	boost::atomic_bool m_doUpdate;
 
 	//pose in world frame
 	Eigen::Affine3d m_pose;

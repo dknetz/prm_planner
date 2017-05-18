@@ -64,7 +64,8 @@ PRMPlanner::PRMPlanner(PlannerParameters params) :
 				m_objectManager(NULL),
 				m_goalActionServer(NULL),
 				m_active(params.active),
-				m_debugIsCollisionDetectionActive(false)
+				m_debugIsCollisionDetectionActive(false),
+				m_useNextPlanningObjectPoses(false)
 {
 }
 
@@ -138,6 +139,8 @@ void PRMPlanner::init()
 	}
 
 	initDynamicReconfigure();
+
+	LOG_DEBUG("Planner initialized successfully!");
 }
 
 void PRMPlanner::initBase()
@@ -211,15 +214,15 @@ void PRMPlanner::initObjectManager()
 void PRMPlanner::initObjectStates()
 {
 	auto& objects = m_objectManager->getObjects();
+	boost::shared_ptr<GripperInterface> gripper = m_robot->getGripper();
+
+	//gripper already has an object
+	if (!gripper->getCurrentObject().empty())
+		return;
+
 	for (auto& object : objects)
 	{
-		boost::shared_ptr<GripperInterface> gripper = m_robot->getGripper();
-
-		//gripper already has an object
-		if (!gripper->getCurrentObject().empty())
-			continue;
-
-		if (object.second->isInGripper(gripper))
+		if (object.second->isActive() && object.second->isInGripper(gripper))
 		{
 			gripper->setCurrentObject(object.first);
 
@@ -259,6 +262,8 @@ void PRMPlanner::initROS()
 				&PRMPlanner::callbackSetState, this);
 		m_serviceServerGetImage = m_nodeHandle.advertiseService("get_image",
 				&PRMPlanner::callbackGetImage, this);
+		m_serviceServerSetObjectPoseType = m_nodeHandle.advertiseService("set_object_pose_type",
+				&PRMPlanner::callbackSetObjectPoseType, this);
 	}
 }
 
@@ -441,9 +446,9 @@ void PRMPlanner::callbackGoal(const prm_planner_msgs::GoalGoalConstPtr& goal)
 		if (m_goalActionServer->isPreemptRequested())
 		{
 			m_threadPlan.interrupt();
+			m_threadPlan.join();
 
-			result = false;
-			m_goalASFeedback.progress = 0.9;
+			m_goalASFeedback.progress = 1.0;
 			m_goalASFeedback.text = "Preempt requested. Stopping planning thread...";
 			m_goalActionServer->publishFeedback(m_goalASFeedback);
 			m_goalASResult.success = result;
@@ -515,6 +520,99 @@ bool PRMPlanner::callbackGetImage(prm_planner_msgs::GetImage::Request& req,
 		r.sleep();
 
 	res.received = true;
+	return true;
+}
+
+bool PRMPlanner::callbackSetObjectPoseType(prm_planner_msgs::SetObjectPoseType::Request& req,
+		prm_planner_msgs::SetObjectPoseType::Response& res)
+{
+
+	switch (req.mode)
+	{
+		case prm_planner_msgs::SetObjectPoseType::Request::UPDATE_OBJECT_POSES:
+			LOG_INFO("Update object poses")
+			;
+
+			m_neglectObjectPoseUpdates = req.neglectedObjects;
+			m_objectManager->setNeglectObject(req.neglectedObjects);
+			m_useNextPlanningObjectPoses = false;
+			break;
+		case prm_planner_msgs::SetObjectPoseType::Request::USE_CURRENT_POSE_WITHOUT_UPDATE:
+			{
+			LOG_INFO("Use current object pose (no update starting now)");
+
+			for (auto& it : req.neglectedObjects)
+			{
+				LOG_INFO("  - " << it);
+			}
+
+			//wait until all objects are active
+			ros::Time n = ros::Time::now();
+			ros::Rate r(10);
+
+			bool available = true;
+			while ((ros::Time::now() - n).toSec() < 60 && ros::ok())
+			{
+				available = true;
+				for (auto& it : req.neglectedObjects)
+				{
+					boost::shared_ptr<GraspableObject> o = m_objectManager->getObject(it);
+					if (o.get() == NULL)
+					{
+						res.success = false;
+						return true;
+					}
+
+					o->lock();
+					o->updatePoseFromTF();
+					o->updateBoundingBox();
+					available &= o->isActive();
+					if (available)
+					{
+						o->setDoUpdate(false);
+						LOG_INFO(m_nodeHandle.getNamespace() << " "<<o->c_params.name<<" "<<o->getPose().matrix());
+					}
+					o->unlock();
+				}
+
+				if (available)
+					break;
+
+				r.sleep();
+			}
+
+			if (available)
+			{
+				m_neglectObjectPoseUpdates = req.neglectedObjects;
+				m_objectManager->setNeglectObject(req.neglectedObjects);
+				m_useNextPlanningObjectPoses = false;
+
+				res.success = true;
+				return true;
+			}
+			else
+			{
+				LOG_INFO("not available");
+				res.success = false;
+				return true;
+			}
+
+			break;
+		}
+		case prm_planner_msgs::SetObjectPoseType::Request::USE_OBJECT_POSES_OF_NEXT_PLANNING_WITHOUT_UPDATE:
+			m_neglectObjectPoseUpdates = req.neglectedObjects;
+			m_useNextPlanningObjectPoses = true;
+
+			LOG_INFO("Use current object pose (no update after next plan())")
+			;
+
+			for (auto& it : m_neglectObjectPoseUpdates)
+			{
+				LOG_INFO("  - " << it);
+			}
+			break;
+	}
+	res.success = true;
 	return true;
 }
 
@@ -610,6 +708,7 @@ void PRMPlanner::threadedUpdate()
 			if (i % 30 == 0 && m_objectManager != NULL)
 			{
 				m_objectManager->updatePosesFromTF();
+				initObjectStates(); //check if object is in gripper
 				i = 0;
 			}
 		}
@@ -641,6 +740,13 @@ void PRMPlanner::concurrentPlan(const bool executeTrajectory)
 			}
 
 			LOG_INFO("Planning finished");
+
+			//deactivate update of object poses if required
+			if (m_useNextPlanningObjectPoses)
+			{
+				m_useNextPlanningObjectPoses = false;
+				m_objectManager->setNeglectObject(m_neglectObjectPoseUpdates);
+			}
 
 			if (executeTrajectory)
 				execute(path);
@@ -717,7 +823,12 @@ bool PRMPlanner::plan(const Eigen::Affine3d& goalPose,
 	Eigen::Affine3d transformedGoal = goalPose;
 	if (!frame.empty())
 	{
-		Eigen::Affine3d t = getTransformation(frame, m_problemDefinition->getFrame());
+		Eigen::Affine3d t;
+		if (!getRosTransformationWithResult(frame, m_problemDefinition->getFrame(), t))
+		{
+			t.setIdentity();
+		}
+
 		transformedGoal = t * transformedGoal;
 	}
 
@@ -763,7 +874,7 @@ void PRMPlanner::execute(const boost::shared_ptr<Path>& path)
 	//don't use path after execution if you want the original version,
 	//because setNewPath will add additional waypoints and deletes the
 	//trajectories
-	if (ParameterServer::executeMotion)
+	if (m_executer.get() != NULL)
 	{
 		LOG_DEBUG("execute");
 		m_executer->executePath(path);
@@ -779,7 +890,12 @@ bool PRMPlanner::planAndExecute(const Eigen::Affine3d& goalPose,
 	Eigen::Affine3d transformedGoal = goalPose;
 	if (!frame.empty())
 	{
-		Eigen::Affine3d t = getTransformation(frame, m_problemDefinition->getFrame());
+		Eigen::Affine3d t;
+		if (!getRosTransformationWithResult(frame, m_problemDefinition->getFrame(), t))
+		{
+			t.setIdentity();
+		}
+
 		transformedGoal = t * transformedGoal;
 	}
 
@@ -833,15 +949,23 @@ bool PRMPlanner::planAndExecuteSync(const Eigen::Affine3d& goalPose,
 		r.sleep();
 	}
 
-	if (!m_planningSuccess)
+	if (!isPlanningSuccess())
 		return false;
 
-	while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+	if (m_executer.get() != NULL)
 	{
-		r.sleep();
+		while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+		{
+			if (m_goalActionServer->isPreemptRequested())
+				m_executer->stopMotion();
+
+			r.sleep();
+		}
+
+		return m_executer->isGoalReached() && !m_executer->hasErrors();
 	}
 
-	return isPlanningSuccess();
+	return true;
 }
 
 bool PRMPlanner::planAndExecuteRelSync(const Eigen::Affine3d& goalPose)
@@ -857,15 +981,23 @@ bool PRMPlanner::planAndExecuteRelSync(const Eigen::Affine3d& goalPose)
 		r.sleep();
 	}
 
-	if (!m_planningSuccess)
+	if (!isPlanningSuccess())
 		return false;
 
-	while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+	if (m_executer.get() != NULL)
 	{
-		r.sleep();
+		while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+		{
+			if (m_goalActionServer->isPreemptRequested())
+				m_executer->stopMotion();
+
+			r.sleep();
+		}
+
+		return m_executer->isGoalReached() && !m_executer->hasErrors();
 	}
 
-	return isPlanningSuccess();
+	return true;
 }
 
 bool PRMPlanner::planAndExecutePD()
@@ -902,12 +1034,20 @@ bool PRMPlanner::graspObjectSync(const std::string& name)
 		r.sleep();
 	}
 
-	if (!m_planningSuccess)
+	if (!isPlanningSuccess())
 		return false;
 
-	while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+	if (m_executer.get() != NULL)
 	{
-		r.sleep();
+		while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+		{
+			if (m_goalActionServer->isPreemptRequested())
+				m_executer->stopMotion();
+
+			r.sleep();
+		}
+
+		return m_executer->isGoalReached() && !m_executer->hasErrors();
 	}
 
 	return true;
@@ -944,12 +1084,20 @@ bool PRMPlanner::dropObjectSync(const std::string& name,
 		r.sleep();
 	}
 
-	if (!m_planningSuccess)
+	if (!isPlanningSuccess())
 		return false;
 
-	while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+	if (m_executer.get() != NULL)
 	{
-		r.sleep();
+		while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
+		{
+			if (m_goalActionServer->isPreemptRequested())
+				m_executer->stopMotion();
+
+			r.sleep();
+		}
+
+		return m_executer->isGoalReached() && !m_executer->hasErrors();
 	}
 
 	return true;
@@ -960,9 +1108,19 @@ bool PRMPlanner::isExecutingMotion() const
 	if (!m_active)
 		return false;
 
+	if (m_executer.get() != NULL)
+		return false;
+
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 
 	return !m_executer->hasErrors() && !m_executer->isGoalReached();
+}
+
+void PRMPlanner::stopMotion()
+{
+	m_threadPlan.interrupt();
+	m_threadPlan.join();
+	m_executer->stopMotion();
 }
 
 boost::shared_ptr<Robot> PRMPlanner::getRobot() const
@@ -1037,12 +1195,13 @@ const ais_point_cloud::RGBDImage::Ptr PRMPlanner::getRGBDImage() const
 
 void PRMPlanner::resetExecuter()
 {
-	if (ParameterServer::useHardwareInterfaceForExecution)
+	if (ParameterServer::executionMode == parameters::HardwareInterface)
 		m_executer.reset(new RobotExecuter);
-	else
+	else if (ParameterServer::executionMode == parameters::FollowJointTrajectoryPublisher)
 		m_executer.reset(new FollowJointTrajectoryExecuter);
 
-	m_executer->init();
+	if (m_executer.get() != NULL)
+		m_executer->init();
 
 	//setup trajectory
 	m_path.reset(new Path(m_problemDefinition->getConfig().planningFrame));
@@ -1052,7 +1211,9 @@ bool PRMPlanner::activateToolFrameFromPD()
 {
 	if (m_problemDefinition->updateToolFrames())
 	{
-		m_executer->reset();
+		if (m_executer.get() != NULL)
+			m_executer->reset();
+
 		return true;
 	}
 	else
@@ -1062,7 +1223,9 @@ bool PRMPlanner::activateToolFrameFromPD()
 void PRMPlanner::activateToolFrame(const Eigen::Affine3d tcp)
 {
 	m_robot->setToolCenterPointTransformation(tcp);
-	m_executer->reset();
+
+	if (m_executer.get() != NULL)
+		m_executer->reset();
 }
 
 const ais_point_cloud::MyPointCloudP& PRMPlanner::getCloud() const

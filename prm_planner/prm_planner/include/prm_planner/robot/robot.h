@@ -35,7 +35,7 @@ public:
 	 * Copy constructor, only generates a flat
 	 * copy of the underlying arm interfaces
 	 */
-	Robot(const Robot& other);
+//	Robot(const Robot& other);
 
 	virtual ~Robot();
 

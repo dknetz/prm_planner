@@ -6,10 +6,13 @@
  */
 
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <fcl_wrapper/collision_detection/fcl_wrapper.h>
 #include <prm_planner/planners/path_planner.h>
 #include <prm_planner/planners/prm/prm_node.h>
 
 #include <fcl_wrapper/robot_model/robot_model.h>
+#include <fcl_wrapper/robot_model/robot_state.h>
+#include <prm_planner/collision_detection/collision_detector.h>
 #include <prm_planner/environment/planning_scene.h>
 #include <prm_planner/problem_definitions/problem_definition.h>
 #include <prm_planner/robot/robot.h>
@@ -64,6 +67,31 @@ bool PathPlanner::plan(const KDL::JntArray& currentJointPose,
 		ros::Rate r(1000);
 		while (!ParameterServer::hasImageReceived())
 			r.sleep();
+	}
+
+	//check collisions in current state
+	if (cd.get() != NULL)
+	{
+		int i = 0;
+		fcl_robot_model::RobotState state;
+		for (auto& it2 : m_robot->getJointNames())
+		{
+			state[it2] = currentJointPose(i++);
+		}
+		cd->robot->setRobotState(state);
+
+		if (cd->fcl->checkCollisions())
+		{
+			fcl_collision_detection::FCLWrapper::CollisionsVector col;
+			cd->fcl->getCollisions(col);
+			LOG_ERROR("Found collisions in start state between: ");
+			for (auto& it : col)
+			{
+				LOG_INFO("   - " << it.first->getName() << " " << it.second->getName());
+			}
+
+			return false;
+		}
 	}
 
 	return true;

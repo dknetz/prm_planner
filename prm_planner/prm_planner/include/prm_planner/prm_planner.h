@@ -21,6 +21,7 @@
 #include <prm_planner_msgs/GoalAction.h>
 #include <prm_planner_msgs/SetState.h>
 #include <prm_planner_msgs/GetImage.h>
+#include <prm_planner_msgs/SetObjectPoseType.h>
 #include <actionlib/server/simple_action_server.h>
 #include <sensor_msgs/JointState.h>
 #include <prm_planner/PRMPlannerConfig.h>
@@ -189,6 +190,11 @@ public:
 	 */
 	boost::shared_ptr<Executer> getExecuter() const;
 
+	/**
+	 * Stops any motion and planning
+	 */
+	void stopMotion();
+
 protected:
 	/**
 	 * Internal method, which is called within a
@@ -240,6 +246,8 @@ protected:
 			prm_planner_msgs::SetState::Response& res);
 	bool callbackGetImage(prm_planner_msgs::GetImage::Request& req,
 			prm_planner_msgs::GetImage::Response& res);
+	bool callbackSetObjectPoseType(prm_planner_msgs::SetObjectPoseType::Request& req,
+			prm_planner_msgs::SetObjectPoseType::Response& res);
 	void callbackDynamicReconfigure(PRMPlannerConfig &config,
 			uint32_t level);
 
@@ -282,6 +290,7 @@ private:
 	//services
 	ros::ServiceServer m_serviceServerSetState;
 	ros::ServiceServer m_serviceServerGetImage;
+	ros::ServiceServer m_serviceServerSetObjectPoseType;
 
 	//other
 	ros::NodeHandle m_nodeHandle;
@@ -329,6 +338,8 @@ private:
 	ObjectManager* m_objectManager;
 	boost::shared_ptr<PlanningScene> m_planningScene;
 	boost::atomic_bool m_envInitialized;
+	std::vector<std::string> m_neglectObjectPoseUpdates;
+	boost::atomic_bool m_useNextPlanningObjectPoses;
 
 	// =======================================================================
 	// ========================= Visualization ===============================

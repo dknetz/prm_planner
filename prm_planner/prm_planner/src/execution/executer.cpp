@@ -41,27 +41,46 @@ void Executer::splitPath(const boost::shared_ptr<Path>& path,
 		SubPath& splittedPath)
 {
 	boost::shared_ptr<Path> subpath(new Path(path->c_frame));
+//
+//	if (path->empty())
+//		return;
+//
+//	double oldVel = path->begin()->maxAngularVel;
 	for (auto& it : *path)
 	{
 		//add all robot waypoints as long as there is no special
 		//waypoint as grasping or droping
-		if (it.type == Path::Waypoint::RobotWaypoint)
+//		double vel = it.maxAngularVel;
+		if (it.type == Path::Waypoint::RobotWaypoint) // && vel == oldVel
 		{
 			subpath->append(it);
 		}
 		//we have anything else
 		else
 		{
+//			if (it.type == Path::Waypoint::RobotWaypoint && vel != oldVel)
+//			{
+//				LOG_INFO("Split due to velocity change from " << oldVel << " to " << vel);
+//			}
+
 			//store the sub path
+			LOG_INFO("Subpath size: " << subpath->size());
 			splittedPath.push_back(subpath);
 
 			//create a new sub path
 			subpath.reset(new Path(path->c_frame));
 			subpath->append(it);
-			splittedPath.push_back(subpath);
 
-			//new sub path for the next waypoints
-			subpath.reset(new Path(path->c_frame));
+//			//we only have one waypoint for specials
+//			if (it.type != Path::Waypoint::RobotWaypoint)
+//			{
+				splittedPath.push_back(subpath);
+
+				//new sub path for the next waypoints
+				subpath.reset(new Path(path->c_frame));
+//			}
+
+//			oldVel = vel;
 		}
 	}
 
@@ -70,6 +89,7 @@ void Executer::splitPath(const boost::shared_ptr<Path>& path,
 	//trajectory at the end of the paths vector
 	if (!subpath->empty())
 	{
+		LOG_INFO("Subpath size: " << subpath->size());
 		splittedPath.push_back(subpath);
 	}
 }
@@ -116,29 +136,6 @@ bool Executer::executePath(const boost::shared_ptr<Path> path)
 
 	return true;
 }
-
-//bool Executer::executeRobotPaths(const PathMap& paths)
-//{
-//	boost::shared_ptr<ProblemDefinition> pd = ProblemDefinitionManager::getInstance()->getProblemDefinition();
-//
-//	//make dense path (important for e.g., constraints)
-//	for (auto& path : paths)
-//	{
-//		path.second->makeDense(0.03);
-//	}
-//
-//	//splits the paths at special waypoints (grasping,...)
-//	EXECUTER_LOCK();
-//	splitPaths(paths, m_pathSegments);
-//	m_currentPathSegment = 0;
-//
-//	//serializes the path map, which can be used for
-//	//repetitive motions without planning
-//	if (m_savePath)
-//		savePathMap(m_pathFileName, paths);
-//
-//	return true;
-//}
 
 bool Executer::executePreprocessedPathMap(const boost::shared_ptr<Path>& path)
 {

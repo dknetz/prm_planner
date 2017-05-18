@@ -31,17 +31,16 @@ public:
 	void setTrajectory(ArmJointPath& trajectory);
 	void setTrajectory(boost::shared_ptr<Path>& path);
 
-	static void initRobotModel(const std::string& robotDescriptionParam,
+	void update();
+
+private:
+	void run();
+	void initRobotModel(const std::string& robotDescriptionParam,
 			const std::string& robotDescriptionParamNew,
 			const std::string& prependString,
 			boost::shared_ptr<RobotArm> robot,
 			RobotStatePublisher*& statePublisher,
 			ros::NodeHandle& myNodeHandle);
-
-	void update();
-
-private:
-	void run();
 
 private:
 	mutable boost::mutex m_mutex;
@@ -54,6 +53,7 @@ private:
 	tf::TransformBroadcaster m_br;
 	int m_counter;
 	std::string m_type;
+	size_t m_uniqueName;
 };
 
 } /* namespace prm_planner */

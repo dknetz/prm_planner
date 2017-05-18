@@ -29,8 +29,9 @@ public:
 	virtual ~FollowJointTrajectoryExecuter();
 
 	virtual bool executePath(const boost::shared_ptr<Path> path);
-//	virtual bool executeRobotPaths(const PathMap& paths);
 	virtual bool executePreprocessedPathMap(const boost::shared_ptr<Path>& path);
+
+	virtual void stopMotion();
 
 	virtual bool isGoalReached() const;
 	virtual bool hasErrors() const;

@@ -138,8 +138,8 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 	}
 	else
 	{
-		wp.velocityAng = 1.0;
-		wp.velocityLin = 1.0;
+		wp.velocityAng = -1.0;
+		wp.velocityLin = -1.0;
 	}
 	m_jointPositions.push_back(wp);
 
@@ -161,7 +161,7 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 	computeDampedLeastSquarePseudoInverse(this->m_jacobian, this->m_pseudoInverse, this->c_parameters);
 //	ais_util::StopWatch::getInstance()->stopPrint("pinv");
 
-//compute where the robot should be
+	//compute where the robot should be
 	this->template computePrediction();
 
 	//compute error
@@ -193,7 +193,11 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 //		}
 //	}
 
-//compute command
+	//compute command
+//	LOG_INFO(this->m_x.x.transpose());
+//	LOG_INFO(this->m_xPredicted.x.transpose());
+//	LOG_INFO(this->m_q.data.transpose());
+//	LOG_INFO(this->m_now.toSec());
 	cmd.data = this->m_pseudoInverse * (this->m_xDesiredDot + this->m_k * this->m_error);
 
 	if (!this->template isValidCommand(cmd, this->m_dt.toSec(), 0.04))
@@ -284,6 +288,11 @@ bool SimulationVelocityControllerN<Dim, Type>::updateFromValues(const Eigen::Aff
 	this->m_x = this->m_x0 = this->m_xPredicted = this->m_xPredictedOld = Trajectory::Pose(waypoints[0].pose);
 	this->m_xGoal = Trajectory::Pose(waypoints[1].pose);
 	m_jointPositions.clear();
+
+//	LOG_INFO("Init");
+//	LOG_INFO(this->m_x.x.transpose());
+//	LOG_INFO(this->m_xGoal.x.transpose());
+//	LOG_INFO(this->m_q.data.transpose());
 
 	return true;
 }
