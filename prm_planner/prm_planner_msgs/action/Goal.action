@@ -1,0 +1,32 @@
+#Default planner. Planning is done in planning frame
+int32 ACTION_MOVE=1
+
+#Default planner. Planning is done relatively to the end effector frame
+#If you have a single robot you don't need to specify the robots name.
+#Otherwise you need to specify the name using the name variable
+int32 ACTION_MOVE_REL = 2
+
+#Executes a grasp. You need to provide the object_name.
+int32 ACTION_GRASP=3
+
+#Executes a drop. You need to provide the object_name.
+int32 ACTION_DROP=4
+
+#Calls the custom plan method which needs to be defined in
+#the problem definition class
+int32 ACTION_CUSTOM=5
+
+#goal
+geometry_msgs/Pose goal		#the goal pose
+string object_name			#used for grasp and drop
+string robot				#used to specify the robot
+int32 action				#one of the ACTION_* codes
+string[] str				#additional information for custom planning (can be used freely)
+---
+#result
+bool success
+string final_state
+---
+#feedback
+float32 progress
+string text

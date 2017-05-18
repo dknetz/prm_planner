@@ -1,0 +1,26 @@
+names:
+- iiwa_pouring
+problems:
+    iiwa_pouring:
+        robot: iiwa
+        constraint: xyzrpy
+        frame: iiwa/iiwa_0_link
+        root_frame: map
+        custom_planning: true #instead of executing the default planning function a user defined method in the problem definition class is called
+        prm: 
+            filename: /home/kuhnerd/tmp/pd_prm_pouring_iiwa.prm
+            save: false
+            size: 100
+            visibility_distance: 0.1
+        approaching_required: true
+        objects:
+            names:
+            - bottle
+            - cup
+            objects:
+                bottle:
+                    model: ${find prm_planner_launch}/models/iiwa_pouring/water_bottle.stl
+                    frame_name: bottle
+                cup:
+                    model: ${find prm_planner_launch}/models/iiwa_pouring/cup.stl
+                    frame_name: cup

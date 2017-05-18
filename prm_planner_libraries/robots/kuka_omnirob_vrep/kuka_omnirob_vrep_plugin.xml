@@ -1,0 +1,7 @@
+<library path="lib/libkuka_omnirob_vrep">
+	<class type="kuka_omnirob_vrep::OmniRobVRepInterface" base_class_type="prm_planner::RobotInterface">
+		<description>
+			omnirob vrep interface
+		</description>
+	</class>
+</library>

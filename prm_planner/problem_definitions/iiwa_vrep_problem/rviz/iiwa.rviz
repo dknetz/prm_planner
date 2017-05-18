@@ -1,0 +1,500 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 84
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /TF1/Frames1
+        - /TF1/Tree1
+        - /Task PRM1
+        - /Task PRM1/Namespaces1
+        - /Goal Pose1
+        - /IK Robot1
+        - /MarkerArray1
+        - /MarkerArray2
+      Splitter Ratio: 0.74256
+    Tree Height: 449
+  - Class: rviz/Help
+    Name: Help
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/TF
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
+    - Class: octomap_rviz_plugin/OccupancyGrid
+      Enabled: true
+      Max. Octree Depth: 16
+      Name: Octomap
+      Octomap Topic: /prm_planner/octomap
+      Queue Size: 5
+      Value: true
+      Voxel Coloring: Z-Axis
+      Voxel Rendering: Occupied Voxels
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /prm_planner/prm/iiwa_single_arm_iiwa
+      Name: Task PRM
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /vrep/depth/image_filtered
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Filtered Depth Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 255; 0; 0
+      Enabled: true
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.3
+      Line Style: Lines
+      Line Width: 0.03
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Topic: /prm_planner/path
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /prm_planner/complete_path
+      Name: Computed Path
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.3
+      Line Style: Lines
+      Line Width: 0.03
+      Name: Trajectory
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Topic: /prm_planner/trajectory/iiwa
+      Unreliable: false
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: false
+      Enabled: true
+      Name: Goal Pose
+      Show Axes: false
+      Show Descriptions: false
+      Show Visual Aids: true
+      Update Topic: /prm_planner/goal/update
+      Value: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        iiwa_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_4_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_5_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_6_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_7_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_adapter:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        iiwa_flange_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sdh2_adapter_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_11_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_12_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_13_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_21_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_22_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_23_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_grasp_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sdh2_palm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_push_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sdh2_thumb_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_thumb_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_thumb_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_tip_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: iiwa
+      Robot Description: iiwa/robot_description
+      TF Prefix: iiwa
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 0.5
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        iiwa_0_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_1_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_2_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_3_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_4_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_5_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_6_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_7_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_adapter_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        iiwa_base_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        iiwa_flange_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sdh2_adapter_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_11_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_12_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_13_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_21_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_22_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_finger_23_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_grasp_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sdh2_palm_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_push_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sdh2_thumb_1_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_thumb_2_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_thumb_3_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sdh2_tip_link_trajectory:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: IK Robot
+      Robot Description: /iiwa/robot_description_trajectory
+      TF Prefix: iiwa
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /vrep/rgb/image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /prm_planner/database
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /prm_planner/planning_scene
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: iiwa/iiwa_base_link
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/Measure
+  Value: true
+  Views:
+    Current:
+      Class: rviz/XYOrbit
+      Distance: 3.15714
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: -0.928918
+        Y: 0.338613
+        Z: -1.61796e-07
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 0.659797
+      Target Frame: base_link
+      Value: XYOrbit (rviz)
+      Yaw: 2.80796
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Filtered Depth Image:
+    collapsed: false
+  Height: 825
+  Help:
+    collapsed: false
+  Hide Left Dock: false
+  Hide Right Dock: true
+  Image:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000001000000000000016a000002f3fc020000000bfb000000100044006900730070006c006100790073010000002800000256000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000003b0000000b0000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e006701000002cf000001ab0000000000000000fb0000000a0049006d0061006700650100000284000000970000001600fffffffb0000000c00430061006d0065007200610100000464000000160000000000000000fb0000002800460069006c0074006500720065006400200044006500700074006800200049006d00610067006500000001f4000000ad0000001600fffffffb0000000c00430061006d0065007200610000000305000000160000000000000000fb0000000a0049006d006100670065010000025a000000c10000000000000000fb0000000a0049006d006100670065000000025a000000c10000000000000000000005cf000002f300000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1855
+  X: 55
+  Y: 14

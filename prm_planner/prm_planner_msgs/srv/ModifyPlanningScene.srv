@@ -1,0 +1,11 @@
+int8 ADD_OBJECT=0
+int8 REMOVE_OBJECT=1
+int8 CLEAR=2
+
+#see above
+int8 mode
+
+#the objects
+prm_planner_msgs/CollisionObject[] objects
+---
+bool result

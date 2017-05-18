@@ -1,0 +1,7 @@
+<library path="lib/libkuka_iiwa_vrep">
+	<class type="kuka_iiwa_vrep::IiwaVRepInterface" base_class_type="prm_planner::RobotInterface">
+		<description>
+			iiwa vrep interface
+		</description>
+	</class>
+</library>

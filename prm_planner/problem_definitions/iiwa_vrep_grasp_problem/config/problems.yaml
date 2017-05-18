@@ -1,0 +1,31 @@
+names:
+- single_arm_iiwa
+problems:
+    single_arm_iiwa:
+        robot: iiwa
+        root_frame: map
+        plugin_package: prm_planner
+        plugin_class: prm_planner::SingleArmProblemDefinition
+        planning:
+            planner_type: prm_a_star
+            constraint: horizontal
+            planning_frame: iiwa/iiwa_0_link
+            prm:
+                filename: /home/kuhnerd/tmp/prm_iiwa_vrep_grasp_problem.prm
+                save: true
+                size: 3000
+                visibility_distance: 0.3
+            rrt:
+                sample_goal: 0.2
+                max_expansion_distance: 0.1
+        objects:
+            names:
+            - bottle
+            - cup
+            objects:
+                bottle:
+                    model: ${find iiwa_vrep_grasp_problem}/models/water_bottle.stl
+                    frame_name: bottle
+                cup:
+                    model: ${find iiwa_vrep_grasp_problem}/models/cup.stl
+                    frame_name: cup

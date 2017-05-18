@@ -1,0 +1,3 @@
+bool active
+---
+bool new_running_state

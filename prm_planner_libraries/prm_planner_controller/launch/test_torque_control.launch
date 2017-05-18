@@ -1,0 +1,9 @@
+<launch>
+	<!-- Given the published joint states, publish tf for the robot links -->
+	<param name="robot_description" textfile="$(find iiwa_description)/urdf/iiwa_sdh2.urdf" />
+
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
+	</node>
+
+	<node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find prm_planner_controller)/rviz/test_torque_controller.rviz" output="screen" />
+</launch>

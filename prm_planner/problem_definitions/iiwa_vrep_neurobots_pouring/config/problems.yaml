@@ -1,0 +1,31 @@
+names:
+- iiwa_pouring
+problems:
+    iiwa_pouring:
+        robot: iiwa
+        root_frame: map
+        plugin_package: neurobots_prm_planner_problems
+        plugin_class: neurobots_prm_planner_problems::PouringProblemDefinition
+        planning:
+            planner_type: prm_a_star
+            constraint: z_up
+            planning_frame: iiwa/iiwa_0_link
+            prm:
+                filename: /home/kuhnerd/tmp/prm_iiwa_vrep_neurobots_pouring_problem.prm
+                save: true
+                size: 3000
+                visibility_distance: 0.3
+            rrt:
+                sample_goal: 0.2
+                max_expansion_distance: 0.1
+        objects:
+            names:
+            - bottle
+            - cup
+            objects:
+                bottle:
+                    model: ${find iiwa_vrep_neurobots_pouring}/models/water_bottle.stl
+                    frame_name: bottle
+                cup:
+                    model: ${find iiwa_vrep_neurobots_pouring}/models/cup.stl
+                    frame_name: cup

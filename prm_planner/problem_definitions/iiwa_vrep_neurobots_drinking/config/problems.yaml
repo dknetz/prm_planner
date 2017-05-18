@@ -1,0 +1,31 @@
+names:
+- iiwa_drinking
+problems:
+    iiwa_drinking:
+        robot: iiwa
+        root_frame: map
+        plugin_package: neurobots_prm_planner_problems
+        plugin_class: neurobots_prm_planner_problems::DrinkingProblemDefinition
+        planning:
+            planner_type: prm_a_star
+            constraint: xyzrpy
+            planning_frame: iiwa/iiwa_base_link
+            prm:
+                filename: /home/kuhnerd/tmp/prm_iiwa_vrep_neurobots_drinking_problem.prm
+                save: true
+                size: 3000
+                visibility_distance: 0.3
+            rrt:
+                sample_goal: 0.2
+                max_expansion_distance: 0.1
+        objects:
+            names:
+            - cup
+            - head
+            objects:
+                cup:
+                    model: ${find iiwa_vrep_neurobots_drinking}/models/cup.stl
+                    frame_name: cup
+                head:
+                    model: ${find iiwa_vrep_neurobots_drinking}/models/sphere_0.4.stl
+                    frame_name: mouth

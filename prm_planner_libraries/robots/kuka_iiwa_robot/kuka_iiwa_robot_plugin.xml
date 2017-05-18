@@ -1,0 +1,7 @@
+<library path="lib/libkuka_iiwa_robot">
+	<class type="kuka_iiwa_robot::IiwaRobotInterface" base_class_type="prm_planner::RobotInterface">
+		<description>
+			iiwa robot interface
+		</description>
+	</class>
+</library>
