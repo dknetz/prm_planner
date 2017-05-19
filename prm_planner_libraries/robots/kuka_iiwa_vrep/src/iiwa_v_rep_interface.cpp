@@ -15,9 +15,12 @@
 namespace kuka_iiwa_vrep
 {
 
-IiwaVRepInterface::IiwaVRepInterface() :
+IiwaVRepInterface::IiwaVRepInterface()
+#ifdef FOUND_VREP
+:
 				m_vrep(NULL),
 				m_firstRead(true)
+#endif
 {
 }
 
