@@ -10,14 +10,13 @@
 #ifndef H9F18194C_6817_4EE0_82EA_BBCB68588782
 #define H9F18194C_6817_4EE0_82EA_BBCB68588782
 
-#include <boost/thread/pthread/mutex.hpp>
-#include <nav_msgs/Odometry.h>
 #include <prm_planner_robot/robot_interface.h>
 #include <ros/ros.h>
 
 #ifdef FOUND_VREP
+#include <boost/thread/pthread/mutex.hpp>
+#include <nav_msgs/Odometry.h>
 #include <vrep_interface/v_rep_interface.h>
-#endif
 
 #define OMNIROB_LBR_BASE_JOINT_ROT1 "global_rot1_joint"
 #define OMNIROB_LBR_BASE_JOINT_LIN "global_lin_joint"
@@ -29,6 +28,7 @@
 #define OMNIROB_LBR_5_JOINT "lbr_5_joint"
 #define OMNIROB_LBR_6_JOINT "lbr_6_joint"
 #define OMNIROB_LBR_7_JOINT "lbr_7_joint"
+#endif
 
 namespace kuka_omnirob_vrep
 {
@@ -46,11 +46,11 @@ public:
 			const ros::Duration period = ros::Duration(0));
 	virtual bool stop();
 
+#ifdef FOUND_VREP
 private:
 	void callbackOdom(nav_msgs::OdometryConstPtr odom);
 
 private:
-#ifdef FOUND_VREP
 	struct VrepData
 	{
 		VrepData() :
@@ -83,8 +83,6 @@ private:
 	simxInt m_handleLeftRearWheel;
 	simxInt m_handleRightRearWheel;
 
-#endif
-
 	/**
 	 * We receive odometry information via ROS to
 	 * be able to also include the platform as a set
@@ -94,6 +92,7 @@ private:
 	ros::Subscriber m_subOdom;
 	bool m_hasOdom;
 	nav_msgs::OdometryConstPtr m_odom;
+#endif
 };
 
 } /* namespace kuka_omnirob_vrep */

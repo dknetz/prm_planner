@@ -10,14 +10,19 @@
 #include <kuka_omnirob_vrep/omni_rob_v_rep_interface.h>
 
 #include <ais_log/log.h>
-#include <eigen_conversions/eigen_msg.h>
 #include <pluginlib/class_list_macros.h>
+
+#ifdef FOUND_VREP
+#include <eigen_conversions/eigen_msg.h>
 #include <tf_conversions/tf_eigen.h>
+#endif
 
 namespace kuka_omnirob_vrep
 {
 
-OmniRobVRepInterface::OmniRobVRepInterface() :
+OmniRobVRepInterface::OmniRobVRepInterface()
+#ifdef FOUND_VREP
+:
 				m_vrep(NULL),
 				m_firstRead(true),
 				m_hasOdom(false),
@@ -25,6 +30,7 @@ OmniRobVRepInterface::OmniRobVRepInterface() :
 				m_handleRightFrontWheel(-1),
 				m_handleLeftRearWheel(-1),
 				m_handleRightRearWheel(-1)
+#endif
 {
 }
 
@@ -283,11 +289,13 @@ bool OmniRobVRepInterface::stop()
 #endif
 }
 
+#ifdef FOUND_VREP
 void OmniRobVRepInterface::callbackOdom(nav_msgs::OdometryConstPtr odom)
 {
 	boost::mutex::scoped_lock lock(m_odomMutex);
 	m_odom = odom;
 }
+#endif
 
 } /* namespace kuka_omnirob_vrep */
 
