@@ -9,17 +9,17 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo) #RelWithDebInfo
 find_package(catkin REQUIRED COMPONENTS
   prm_planner
   roscpp
-  sdh2_hand
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
 
-find_package(vrep_interface QUIET)
-if (${vrep_interface_FOUND})
-    set(catkin_INCLUDE_DIRS "${catkin_INCLUDE_DIRS};${vrep_interface_INCLUDE_DIRS}")
-    set(catkin_LIBRARIES "${catkin_LIBRARIES};${vrep_interface_LIBRARIES}")
-    add_definitions(-DFOUND_VREP)
+#get sdh driver includes and library, if available
+find_package(sdh2_hand QUIET)
+if (${sdh2_hand_FOUND})
+    set(catkin_INCLUDE_DIRS "${catkin_INCLUDE_DIRS};${sdh2_hand_INCLUDE_DIRS}")
+    set(catkin_LIBRARIES "${catkin_LIBRARIES};${sdh2_hand_LIBRARIES}")
+    add_definitions(-DFOUND_SDH)
 endif()
 
 ###################################

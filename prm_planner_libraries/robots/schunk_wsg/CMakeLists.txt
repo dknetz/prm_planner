@@ -8,18 +8,18 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo) #RelWithDebInfo
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   prm_planner
-  wsg_gripper
   roscpp
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
 
-find_package(vrep_interface QUIET)
-if (${vrep_interface_FOUND})
-    set(catkin_INCLUDE_DIRS "${catkin_INCLUDE_DIRS};${vrep_interface_INCLUDE_DIRS}")
-    set(catkin_LIBRARIES "${catkin_LIBRARIES};${vrep_interface_LIBRARIES}")
-    add_definitions(-DFOUND_VREP)
+#get wsg driver includes and library, if available
+find_package(wsg_gripper QUIET)
+if (${wsg_gripper_FOUND})
+    set(catkin_INCLUDE_DIRS "${catkin_INCLUDE_DIRS};${wsg_gripper_INCLUDE_DIRS}")
+    set(catkin_LIBRARIES "${catkin_LIBRARIES};${wsg_gripper_LIBRARIES}")
+    add_definitions(-DFOUND_WSG)
 endif()
 
 ###################################
@@ -34,7 +34,7 @@ endif()
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES schunk_wsg
-    CATKIN_DEPENDS prm_planner wsg_gripper roscpp
+    CATKIN_DEPENDS prm_planner roscpp
     DEPENDS Boost
 )
 

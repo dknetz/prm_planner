@@ -9,7 +9,6 @@
 
 #ifndef HF0FDEC6B_B2B2_45DA_A8B0_494EFAF39215
 #define HF0FDEC6B_B2B2_45DA_A8B0_494EFAF39215
-#include <boost/thread.hpp>
 
 #ifdef FOUND_IIWA_FRI
 
@@ -17,6 +16,7 @@
 #include <iiwa_fri/friUdpConnection.h>
 #include <iiwa_fri/friClientApplication.h>
 #include <iiwa_fri/friLBRClient.h>
+#include <boost/thread.hpp>
 
 namespace kuka_iiwa_robot
 {
