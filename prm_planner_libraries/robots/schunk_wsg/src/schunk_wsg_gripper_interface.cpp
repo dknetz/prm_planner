@@ -11,22 +11,22 @@
 #include <ais_log/log.h>
 #include <pluginlib/class_list_macros.h>
 
-#ifdef FOUND_WSG
-#include <wsg_gripper/GripperCommandAction.h>
-#endif
-
 namespace schunk_wsg
 {
 
 SchunkWSGGripperInterface::SchunkWSGGripperInterface() :
-				prm_planner::GripperInterface(),
-				m_actionClient(NULL)
+				prm_planner::GripperInterface()
 {
+#ifdef FOUND_WSG
+	m_actionClient = NULL;
+#endif
 }
 
 SchunkWSGGripperInterface::~SchunkWSGGripperInterface()
 {
+#ifdef FOUND_WSG
 	DELETE_VAR(m_actionClient);
+#endif
 }
 
 bool SchunkWSGGripperInterface::open()

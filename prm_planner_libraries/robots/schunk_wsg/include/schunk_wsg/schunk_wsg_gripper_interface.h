@@ -12,7 +12,10 @@
 
 #include <actionlib/client/simple_action_client.h>
 #include <prm_planner_robot/gripper_interface.h>
+
+#ifdef FOUND_WSG
 #include <wsg_gripper/GripperCommandAction.h>
+#endif
 
 namespace schunk_wsg
 {
@@ -29,7 +32,9 @@ public:
 		virtual bool close();
 
 private:
+#ifdef FOUND_WSG
 		actionlib::SimpleActionClient<wsg_gripper::GripperCommandAction>* m_actionClient;
+#endif
 };
 
 } /* namespace schunk_wsg */
