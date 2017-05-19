@@ -19,8 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   fcl_wrapper
 )
 
-find_package(lbr_vrep_interface QUIET)
-
 find_package(Boost REQUIRED COMPONENTS chrono system thread)
 find_package(orocos_kdl REQUIRED)
 
@@ -37,13 +35,13 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES controller_basics velocity_controller torque_controller
   CATKIN_DEPENDS prm_planner_robot
-      prm_planner_constraints
-      roscpp
-      ais_util
-      ais_ros
-      ais_definitions
-      ais_point_cloud
-      fcl_wrapper
+	  prm_planner_constraints
+	  roscpp
+	  ais_util
+	  ais_ros
+	  ais_definitions
+	  ais_point_cloud
+	  fcl_wrapper
   DEPENDS Boost orocos_kdl
 )
 
@@ -52,12 +50,12 @@ catkin_package(
 ###########
 
 if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
+	set(CMAKE_CXX_FLAGS "-O3")		## Optimize
 endif()
 
 ADD_DEFINITIONS(
-    -std=c++11
-    -D__cplusplus=201103L #for eclipse
+	-std=c++11
+	-D__cplusplus=201103L #for eclipse
 )
 
 ## Specify additional locations of header files
@@ -72,16 +70,16 @@ include_directories(
 
 ## Declare a C++ library
 add_library(controller_basics
-    src/jacobian_multi_solver.cpp
-    src/controller.cpp
+	src/jacobian_multi_solver.cpp
+	src/controller.cpp
 )
 
 add_library(velocity_controller
-    src/velocity_controller.cpp
+	src/velocity_controller.cpp
 )
 
 add_library(torque_controller
-    src/torque_controller.cpp
+	src/torque_controller.cpp
 )
 
 set(LIBRARIES
@@ -91,58 +89,53 @@ set(LIBRARIES
    -lrt
 )
 
-if (${lbr_vrep_interface_FOUND}) 
-    include_directories(${lbr_vrep_interface_INCLUDE_DIRS})
-    add_definitions(-DFOUND_VREP_INTERFACE)
-    set(LIBRARIES ${LIBRARIES} ${lbr_vrep_interface_LIBRARIES})
-endif()
-
 # Specify libraries to link a library or executable target against
 target_link_libraries(controller_basics
-    ${LIBRARIES}
+	${LIBRARIES}
 )
 
 target_link_libraries(velocity_controller
-    controller_basics
+	controller_basics
 )
 
 target_link_libraries(torque_controller
-    controller_basics
+	controller_basics
 )
 
 #examples/test
 if (BUILD_EXAMPLES_AND_TEST)
-    add_executable(example_velocity_controller
-        test/example_velocity_controller.cpp
-    )
-    target_link_libraries(example_velocity_controller
-        velocity_controller
-    )
-    
-#    find_package(kuka_robot_interfaces REQUIRED)
-    find_package(vrep_interface REQUIRED)
-    include_directories(${kuka_robot_interfaces_INCLUDE_DIRS} ${vrep_interface_INCLUDE_DIRS})
-    
-    #velocity test controller
-    add_executable(test_velocity_controller
-        test/test_velocity_controller.cpp
-    )
-    
-    target_link_libraries(test_velocity_controller
-        controller_basics
- #       ${kuka_robot_interfaces_LIBRARIES}
-        ${vrep_interface_LIBRARIES}
-    )
-    
-    #torque test controller
-    add_executable(test_torque_controller
-        test/test_torque_controller.cpp
-    )
-    
-    target_link_libraries(test_torque_controller
-        controller_basics
-  #      ${kuka_robot_interfaces_LIBRARIES}
-        ${vrep_interface_LIBRARIES}
-    )
+	add_executable(example_velocity_controller
+		test/example_velocity_controller.cpp
+	)
+	
+	target_link_libraries(example_velocity_controller
+		velocity_controller
+	)
+	
+	#only build, if vrep interface is available
+	find_package(vrep_interface QUIET)
+	if (${vrep_interface_FOUND}) 
+        	include_directories(${vrep_interface_INCLUDE_DIRS})
+        
+        	#velocity test controller
+        	add_executable(test_velocity_controller
+        			test/test_velocity_controller.cpp
+        	)
+        	
+        	target_link_libraries(test_velocity_controller
+        		controller_basics
+        		${vrep_interface_LIBRARIES}
+        	)
+        		
+        	#torque test controller
+        	add_executable(test_torque_controller
+        		test/test_torque_controller.cpp
+        	)
+        		
+        	target_link_libraries(test_torque_controller
+        		controller_basics
+        		${vrep_interface_LIBRARIES}
+        	)
+        endif()
 endif()
 
