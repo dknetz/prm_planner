@@ -481,7 +481,7 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 				//current robot pose
 				const PRMNode* startPRMNode = node->edgeToThisNode->getOtherNode(node->node->getId());
 
-				controllable = view->updateEdge(node->edgeToThisNode, 400, predictedJointPose, startPRMNode, node->startJoints, cd, 0.08);//0.01s = 70 iterations notebook
+				controllable = view->updateEdge(node->edgeToThisNode, 400, predictedJointPose, startPRMNode, node->startJoints, cd, 0.2);//0.08 0.01s = 70 iterations notebook
 
 				if (!controllable)
 				{

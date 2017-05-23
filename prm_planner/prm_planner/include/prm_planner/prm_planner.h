@@ -26,6 +26,7 @@
 #include <sensor_msgs/JointState.h>
 #include <prm_planner/PRMPlannerConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <prm_planner_msgs/ModifyPlanningScene.h>
 
 namespace prm_planner
 {
@@ -250,6 +251,8 @@ protected:
 			prm_planner_msgs::SetObjectPoseType::Response& res);
 	void callbackDynamicReconfigure(PRMPlannerConfig &config,
 			uint32_t level);
+	bool callbackModifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
+			prm_planner_msgs::ModifyPlanningScene::Response& res);
 
 	// =======================================================================
 	// ========================= Other =======================================
@@ -291,6 +294,7 @@ private:
 	ros::ServiceServer m_serviceServerSetState;
 	ros::ServiceServer m_serviceServerGetImage;
 	ros::ServiceServer m_serviceServerSetObjectPoseType;
+	ros::ServiceServer m_serviceModifyPlanningScene;
 
 	//other
 	ros::NodeHandle m_nodeHandle;

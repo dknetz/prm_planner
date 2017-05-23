@@ -1,0 +1,26 @@
+general:
+    use_shortcuts: true
+    verbose: true
+    visualize: true
+    problem_definition: single_arm_iiwa
+    connected_to_vrep: true
+    start_ros_spinner: true
+    start_ros_publishers: true
+    start_ros_subscribers: true
+    one_image_mode: true
+planning:
+    max_planning_time: 60
+execution:
+    mode: 1 #0 = no execution, 1 = hardware interface, 2 = follow joint trajectory
+octomap:
+    resolution: 0.025
+    prob_hit: 0.7
+    prob_miss: 0.4
+    clamping_threshold_min: 0.12
+    clamping_threshold_max: 0.97
+topics:
+    camera_depth: /vrep/depth/image_filtered
+    camera_depth_info: /vrep/depth/camera_info
+    camera_prefix: camera
+constraint:
+    type: xyzrpy

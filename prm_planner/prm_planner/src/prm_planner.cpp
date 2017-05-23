@@ -110,14 +110,21 @@ void PRMPlanner::init()
 	//	boost::recursive_mutex::scoped_lock lock(m_mutex);
 
 	//start base only if in active mode
+	LOG_DEBUG("Init Base");
 	if (m_active)
 		initBase();
 	startRosBaseInterface(ParameterServer::startRosSpinner);
 
-	initROS();
+	LOG_DEBUG("Init objects");
 	initObjectManager();
+
+	LOG_DEBUG("Init problem");
 	initProblemDefinition(); //initialize after ros and base
+
+	LOG_DEBUG("Init robot");
 	initRobot();
+
+	LOG_DEBUG("Init visualization");
 	initVisualization();
 
 	//don't reset problem definition, because it is already reseted
@@ -129,6 +136,7 @@ void PRMPlanner::init()
 	//state
 	if (m_active)
 	{
+		LOG_INFO("Starting Threads");
 		startThreads();
 		initObjectStates();
 	}
@@ -138,6 +146,8 @@ void PRMPlanner::init()
 				"service to activate the planner!");
 	}
 
+	LOG_DEBUG("Init ROS");
+	initROS();
 	initDynamicReconfigure();
 
 	LOG_DEBUG("Planner initialized successfully!");
@@ -249,7 +259,6 @@ void PRMPlanner::initROS()
 	{
 		m_pubTrajectory = m_nodeHandle.advertise<nav_msgs::Path>("path", 1);
 		ais_util::ProgressBar::activateRosPublisher("/prm_planner/progress");
-		LOG_INFO("Activated progress publisher on /prm_planner/progress");
 	}
 
 	if (ParameterServer::startSubscribers)
@@ -264,6 +273,8 @@ void PRMPlanner::initROS()
 				&PRMPlanner::callbackGetImage, this);
 		m_serviceServerSetObjectPoseType = m_nodeHandle.advertiseService("set_object_pose_type",
 				&PRMPlanner::callbackSetObjectPoseType, this);
+		m_serviceModifyPlanningScene = m_nodeHandle.advertiseService("modify_planning_scene",
+				&PRMPlanner::callbackModifyPlanningScene, this);
 	}
 }
 
@@ -651,6 +662,20 @@ void PRMPlanner::callbackDynamicReconfigure(PRMPlannerConfig& config,
 		m_executer->setPathFileName(config.save_path_to_disk_filename);
 		m_executer->setSavePath(config.save_path_to_disk);
 	}
+}
+
+bool PRMPlanner::callbackModifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
+		prm_planner_msgs::ModifyPlanningScene::Response& res)
+{
+	bool result = m_planningScene->modifyPlanningScene(req, res);
+
+	if (result)
+	{
+		m_problemDefinition->update(m_planningScene);
+		return true;
+	}
+
+	return false;
 }
 
 void PRMPlanner::setRGBDImage(ais_point_cloud::RGBDImage::Ptr& image)
@@ -1258,7 +1283,7 @@ void PRMPlanner::threadDebugCollisionChecks()
 			LOG_INFO("Collisions: ")
 			for (auto& it : collisions)
 			{
-				LOG_INFO("-- " << it.first->getName() << " <-> " << it.second->getName());
+				LOG_INFO("-- " << it.first << " <-> " << it.second);
 			}
 		}
 

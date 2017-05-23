@@ -18,12 +18,12 @@
 #include <fstream>
 #include <spline_library/hermite/cubic/cubic_hermite_spline.h>
 
-#include <ais_log/data_logger.h>
+//#include <ais_log/data_logger.h>
 
 using KDL::ChainFkSolverPos_recursive;
 using KDL::Frame;
 
-DATA_LOGGER_INIT();
+//DATA_LOGGER_INIT();
 
 namespace prm_planner
 {
@@ -50,24 +50,24 @@ Trajectory::Trajectory(const boost::shared_ptr<Path>& path,
 	initializeSpline();
 
 //	LOG_INFO("DEBUG TRUE")
-	if (m_path->m_debug)
-	{
-		static int counter = 0;
-		if (counter != 0)
-			DATA_LOGGER_CLOSE("spline_" + std::to_string(counter - 1));
-
-		std::string name = "spline_" + std::to_string(counter++);
-		DATA_LOGGER_ADD(name, "/tmp/" + name + ".data");
-
-		float length = m_spline.spline->getMaxT();
-
-		for (float i = 0; i < length; i += (length / 1000.0))
-		{
-			Spline<Vector3>::InterpolatedPT tang = m_spline.spline->getTangent(i);
-			DATA_LOGGER_WRITE(name)
-			<< i << tang.position.length() << tang.tangent.length();
-		}
-	}
+//	if (m_path->m_debug)
+//	{
+//		static int counter = 0;
+//		if (counter != 0)
+//			DATA_LOGGER_CLOSE("spline_" + std::to_string(counter - 1));
+//
+//		std::string name = "spline_" + std::to_string(counter++);
+//		DATA_LOGGER_ADD(name, "/tmp/" + name + ".data");
+//
+//		float length = m_spline.spline->getMaxT();
+//
+//		for (float i = 0; i < length; i += (length / 1000.0))
+//		{
+//			Spline<Vector3>::InterpolatedPT tang = m_spline.spline->getTangent(i);
+//			DATA_LOGGER_WRITE(name)
+//			<< i << tang.position.length() << tang.tangent.length();
+//		}
+//	}
 
 	//compute time
 	Eigen::Affine3d& pose0 = m_path->operator [](0).pose;

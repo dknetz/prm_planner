@@ -22,6 +22,7 @@
 #define AlXM0V7pXEqpklU2Okoc
 
 #include <boost/thread/recursive_mutex.hpp>
+#include <fcl/collision_data.h>
 #include <fcl_wrapper/collision_detection/collection.h>
 #include <fcl_wrapper/collision_detection/collision_matrix.h>
 #include <fcl_wrapper/collision_detection/fcl_pointer.h>
@@ -36,7 +37,28 @@ namespace fcl_collision_detection
 class FCLWrapper
 {
 public:
-	typedef std::vector<std::pair<PhysicalObject*, PhysicalObject*>> CollisionsVector;
+	typedef std::vector<std::pair<std::string, std::string>> CollisionsVector;
+	typedef std::vector<std::pair<PhysicalObject*, PhysicalObject*>> CollisionsVectorObjects;
+
+	struct CollisionData
+	{
+		CollisionData()
+		{
+			done = false;
+		}
+
+		/// @brief Collision request
+		fcl::CollisionRequest request;
+
+		/// @brief Collision result
+		fcl::CollisionResult result;
+
+		// collision matrix
+		CollisionMatrix::Ptr cm;
+
+		/// @brief Whether the collision iteration can stop
+		bool done;
+	};
 
 	FCLWrapper();
 	virtual ~FCLWrapper();
@@ -59,8 +81,14 @@ public:
 	void updateObject(boost::shared_ptr<PhysicalObject> object);
 
 	bool checkCollisions(bool findAllCollisions = false);
+	bool checkPairwiseCollisions(bool findAllCollisions = false);
 
 	void getCollisions(CollisionsVector& collisions);
+
+	/**
+	 * Only call this method, if you called checkPairwiseCollisions before!
+	 */
+	void getPairwiseCollisions(CollisionsVectorObjects& collisions);
 
 	bool isUseCollisionMatrix() const;
 	void setUseCollisionMatrix(bool useCollisionMatrix);
@@ -68,14 +96,22 @@ public:
 	void lock();
 	void unlock();
 
+private:
+	void updateCollisionsVector(std::vector<fcl::Contact>& contacts,
+			const std::string& object1,
+			const std::string& object2);
+
 protected:
 	mutable boost::recursive_mutex m_mutex;
 	std::unordered_map<std::string, FCL_POINTER<PhysicalObject>> m_worldObjects;
+	std::unordered_map<std::string, FCL_POINTER<Collection>> m_objectHierarchies;
 	CollisionMatrix::Ptr m_collisionMatrix;
 	CollisionsVector m_collisions;
+	CollisionsVectorObjects m_collisionsObjects;
 	bool m_useCollisionMatrix;
 };
 
-} /* namespace fcl_collision_detection */
+}
+/* namespace fcl_collision_detection */
 
 #endif /* AlXM0V7pXEqpklU2Okoc */

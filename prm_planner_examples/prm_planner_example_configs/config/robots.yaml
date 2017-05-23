@@ -1,0 +1,98 @@
+names:
+- iiwa
+robots:
+    iiwa:
+        arm_names:
+        - iiwa
+        arms:
+            iiwa:
+                start_link: iiwa_base_link
+                end_link: sdh2_grasp_link
+                tool_frame: false
+                description: /iiwa/robot_description
+                tf_prefix: iiwa
+                controller_config: iiwa_simulation
+                interface_package: kuka_iiwa_simple
+                interface_class: kuka_iiwa_simple::IiwaSimpleInterface
+                follow_joint_trajectory_topic: /
+                joint_state_topic: /
+                hand:
+                    name: sdh2
+                    joint_state_topic: /iiwa/joint_states
+                    joint_names:
+                    - sdh2_knuckle_joint
+                    - sdh2_finger_12_joint
+                    - sdh2_finger_13_joint
+                    - sdh2_finger_21_joint
+                    - sdh2_finger_22_joint
+                    - sdh2_finger_23_joint
+                    - sdh2_thumb_2_joint
+                    - sdh2_thumb_3_joint
+                    min_grasping_height: 0.1
+                    topic: /iiwa/sdh_action
+                    interface_package: schunk_sdh2
+                    interface_class: schunk_sdh2::SchunkSDH2GripperInterface
+                    grasp_radius: -0.01
+                    grasp_pre_distance: 0.16
+                    drop_pre_distance: 0.05
+controller_configs:
+    iiwa_simulation:
+        name: VelocityController7DOF
+        frequency: 250
+        max_velocity: 0.7
+        k:
+        - 10
+        - 10
+        - 10
+        - 3
+        - 3
+        - 3
+        lambda: 1.7
+        least_square_lambda_max: 0.04
+        least_square_epsilon: 0.04
+        debug: false
+        goal_dist_pos: 0.015
+        goal_dist_ang: 0.02
+        collision_avoidance:
+            use: false
+            vel_0: 3.0
+            distance_1: 0.2
+            distance_2: 0.5
+            max_vel: 0.7
+            ratio_do_collision_checks: 1.0
+        max_task_vel:
+            linear: 0.05
+            angular: 0.2
+        joint_range_weight:
+            default: 0.3
+            std: 0.3
+    iiwa_robot:
+        name: VelocityController7DOF
+        frequency: 250
+        max_velocity: 0.7
+        k:
+        - 10
+        - 10
+        - 10
+        - 3
+        - 3
+        - 3
+        lambda: 1.7
+        least_square_lambda_max: 0.04
+        least_square_epsilon: 0.04
+        debug: false
+        goal_dist_pos: 0.015
+        goal_dist_ang: 0.02
+        collision_avoidance:
+            use: false
+            vel_0: 3.0
+            distance_1: 0.2
+            distance_2: 0.5
+            max_vel: 0.7
+            ratio_do_collision_checks: 1.0
+        max_task_vel:
+            linear: 0.05
+            angular: 0.2
+        joint_range_weight:
+            default: 0.3
+            std: 0.3

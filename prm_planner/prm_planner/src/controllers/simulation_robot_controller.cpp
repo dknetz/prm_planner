@@ -21,6 +21,7 @@
 #include <prm_planner/robot/robot.h>
 #include <prm_planner/collision_detection/collision_detector.h>
 #include <fcl_wrapper/robot_model/robot_model.h>
+#include <fstream>
 
 namespace prm_planner
 {
@@ -88,6 +89,19 @@ SimulationRobotController::~SimulationRobotController()
 	DELETE_VAR(m_controller);
 }
 
+//void writeF(const std::string& state,
+//		std::vector<double>& pos,
+//		std::vector<double>& ang)
+//{
+//	static int c = 0;
+//	std::ofstream f("/tmp/controller_" + std::to_string(c++) + "_" + state + ".txt", std::ofstream::out);
+//	for (size_t i = 0; i < pos.size(); ++i)
+//	{
+//		f << pos[i] << " " << ang[i] << "\n";
+//	}
+//	f.close();
+//}
+
 bool SimulationRobotController::canControl(const double maxWaitTime,
 		const double dt)
 {
@@ -97,10 +111,14 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 
 	bool useCollisionDetection = m_cd.get() != NULL;
 
+//	static double c1 = 0, c2 = 0, c3 = 0;
+
 //	struct timespec startTime, nowTime;
 //	clock_gettime( CLOCK_THREAD_CPUTIME_ID, &startTime); //we use CLOCK_THREAD_CPUTIME_ID to get thread time
 
 	int counter = 0;
+//	c1++;
+	std::vector<double> dPos, dAng;
 	while (++counter < maxWaitTime)
 	{
 //		clock_gettime( CLOCK_THREAD_CPUTIME_ID, &nowTime);
@@ -113,11 +131,22 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 
 		bool goalReached = true;
 
+		Vector6d dToGoal = ((SimulationVelocityControllerN<7, double>*) m_controller)->getDistToGoal();
+		dPos.push_back(dToGoal.head(3).norm());
+		dAng.push_back(dToGoal.tail(3).maxCoeff());
+
 		//update controllers
+//		ais_util::StopWatch::getInstance()->start("controller");
 		if (!m_controller->update(now, deltaT))
 		{
+//			ais_util::StopWatch::getInstance()->stopPrint("controller");
+//			c2 += counter;
+//			LOG_INFO(c2 / c1);
+//			LOG_INFO(c3 / c1);
+//			writeF("con", dPos, dAng);
 			return false;
 		}
+//		ais_util::StopWatch::getInstance()->stopPrint("controller");
 
 		//check collision after x sec and at the beginning
 		if (useCollisionDetection && lastCollisionCheck > 0.3)
@@ -128,6 +157,8 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 		//check collisions
 		if (lastCollisionCheck > 0.3)
 		{
+//			c3++;
+//			ais_util::StopWatch::getInstance()->start("col");
 			if (useCollisionDetection && m_cd->fcl->checkCollisions())
 			{
 //				fcl_collision_detection::FCLWrapper::CollisionsVector col;
@@ -136,9 +167,15 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 //				for (auto& it: col) {
 //					LOG_INFO(it.first->getName() << " " << it.second->getName());
 //				}
+//				c2 += counter;
+//				LOG_INFO(c2 / c1);
+//				LOG_INFO(c3 / c1);
+//				writeF("col", dPos, dAng);
+//				ais_util::StopWatch::getInstance()->stopPrint("col");
 				return false;
 			}
 			lastCollisionCheck = 0;
+//			ais_util::StopWatch::getInstance()->stopPrint("col");
 		}
 
 		//check if goal is reached
@@ -153,14 +190,26 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 
 				if (m_cd->fcl->checkCollisions())
 				{
+//					c2 += counter;
+//					LOG_INFO(c2 / c1);
+//					LOG_INFO(c3 / c1);
+//					writeF("col2", dPos, dAng);
 					return false;
 				}
 			}
 
+//			c2 += counter;
+//			LOG_INFO(c2 / c1);
+//			LOG_INFO(c3 / c1);
+//			writeF("ok", dPos, dAng);
 			return true;
 		}
 	}
 
+//	c2 += counter;
+//	LOG_INFO(c2 / c1);
+//	LOG_INFO(c3 / c1);
+//	writeF("time", dPos, dAng);
 	return false;
 }
 

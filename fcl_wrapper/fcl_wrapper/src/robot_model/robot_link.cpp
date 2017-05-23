@@ -205,6 +205,7 @@ fcl_collision_detection::PhysicalObject::CollisionObjectPtr RobotLink::getFCLMod
 
 		fcl::Transform3f t = m_tf * fcl_collision_detection::transform2fcl(m_transformationToBase * m_collisionModel->origin);
 		m_fclCollisionObject->setTransform(t);
+		m_fclCollisionObject->computeAABB();
 	}
 
 	return m_fclCollisionObject;
@@ -218,6 +219,7 @@ fcl_collision_detection::PhysicalObject::CollisionObjectPtr RobotLink::getFCLMod
 	{
 		fcl::Transform3f t = fcl_collision_detection::transform2fcl(m_transformationToBase * m_collisionModel->origin);
 		m_fclCollisionObject->setTransform(t);
+		m_fclCollisionObject->computeAABB();
 	}
 
 	return m_fclCollisionObject;

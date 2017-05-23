@@ -81,7 +81,7 @@ CollisionDetector::CollisionDetector(boost::shared_ptr<Robot> robotInterface,
 	if (planningScene.get() != NULL)
 	{
 		//add octomap
-		if (planningScene->octomap.get() != NULL)
+		if (planningScene->octomap.get() != NULL && planningScene->octomap->size() > 0)
 		{
 			boost::shared_ptr<ProblemDefinition> pd = ProblemDefinitionManager::getInstance()->getProblemDefinition();
 
@@ -125,6 +125,7 @@ CollisionDetector::CollisionDetector(boost::shared_ptr<Robot> robotInterface,
 			else
 			{
 				LOG_FATAL("Unknown object type");
+				continue;
 			}
 
 			fclObject->setTransform(o.second->m_transformation);

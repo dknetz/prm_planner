@@ -8,6 +8,7 @@
  */
 
 #include <ais_definitions/macros.h>
+#include <ais_util/stop_watch.h>
 #include <fcl_wrapper/collision_detection/fcl_wrapper.h>
 #include <prm_planner/planners/prm/prm_edge.h>
 #include <prm_planner/planners/prm/prm_node.h>
@@ -269,7 +270,9 @@ bool PRMView::updateEdge(const PRMEdge* edge,
 		return false;
 
 	data.m_controller->setCollisionDetection(cd);
+//	ais_util::StopWatch::getInstance()->start("update");
 	data.m_controllerSuccessful = data.m_controller->canControl(maxWaitTime, dt);
+//	ais_util::StopWatch::getInstance()->stopPrint("update");
 	data.m_controller->getFinalJointState(finalPose);
 
 	bool result = data.m_controllerSuccessful;

@@ -72,7 +72,7 @@ bool FeasibilityChecker::check(const Eigen::Affine3d& pose,
 						cd->fcl->getCollisions(collisions);
 						for (auto& it : collisions)
 						{
-							LOG_INFO("Collision between: " << it.first->getName() << " and " << it.second->getName());
+							LOG_WARNING("Collision between: " << it.first << " and " << it.second);
 						}
 
 						printed = true;

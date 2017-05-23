@@ -66,6 +66,7 @@ PhysicalObject::CollisionObjectPtr PhysicalObject::getFCLModel()
 	}
 
 	m_fclCollisionObject->setTransform(m_tf);
+	m_fclCollisionObject->computeAABB();
 	return m_fclCollisionObject;
 }
 

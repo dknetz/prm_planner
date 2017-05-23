@@ -20,12 +20,13 @@ RobotTrajectoryVisualizer::RobotTrajectoryVisualizer(boost::shared_ptr<Robot> ro
 		const std::string& type) :
 				m_robot(robot),
 				m_type(type),
-				m_counter(0)
+				m_counter(0),
+				m_nodeHandle("~")
 {
 	std::hash<std::string> hash;
 	m_uniqueName = hash(m_nodeHandle.getNamespace());
 
-	initRobotModel(m_robot->getRobotDescription(), m_robot->getRobotDescription() + "_" + m_type, m_type,
+	initRobotModel(m_robot->getRobotDescription(), m_nodeHandle.getNamespace() + m_robot->getRobotDescription() + "_" + m_type, m_type,
 			m_robot, m_statePublisher, m_nodeHandle);
 }
 
@@ -48,6 +49,7 @@ void RobotTrajectoryVisualizer::setTrajectory(ArmJointPath& trajectory)
 {
 	boost::mutex::scoped_lock lock(m_mutex);
 	m_trajectory = trajectory;
+	m_counter = 0;
 }
 
 void RobotTrajectoryVisualizer::setTrajectory(boost::shared_ptr<Path>& path)
@@ -81,8 +83,8 @@ void RobotTrajectoryVisualizer::initRobotModel(const std::string& robotDescripti
 	const KDL::Tree& tree = robot->getRobot();
 	for (auto& it : tree.getSegments())
 	{
-		boost::replace_all(desc, "name=\"" + it.second.segment.getName(), "name=\"" + it.second.segment.getName() + "_" + prependString);
-		boost::replace_all(desc, "link=\"" + it.second.segment.getName(), "link=\"" + it.second.segment.getName() + "_" + prependString);
+		boost::replace_all(desc, "name=\"" + it.second.segment.getName(), "name=\"" + it.second.segment.getName() + "_" + prependString + "_" + std::to_string(m_uniqueName));
+		boost::replace_all(desc, "link=\"" + it.second.segment.getName(), "link=\"" + it.second.segment.getName() + "_" + prependString + "_" + std::to_string(m_uniqueName));
 		boost::replace_all(desc, "name=\"" + it.second.segment.getJoint().getName(),
 				"name=\"" + it.second.segment.getJoint().getName() + "_" + prependString + "_" + std::to_string(m_uniqueName));
 	}

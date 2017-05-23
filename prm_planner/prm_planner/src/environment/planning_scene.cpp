@@ -56,12 +56,6 @@ void PlanningScene::initROS()
 		m_pubWorkspace = n.advertise<visualization_msgs::MarkerArray>("workspace", 1);
 		m_pubObjects = n.advertise<visualization_msgs::MarkerArray>("planning_scene", 1);
 	}
-
-	if (ParameterServer::startSubscribers)
-	{
-		m_serviceModifyPlanningScene = n.advertiseService("modify_planning_scene",
-				&PlanningScene::callbackModifyPlanningScene, this);
-	}
 }
 
 void PlanningScene::initOctomap()
@@ -265,7 +259,7 @@ void PlanningScene::publish()
 	}
 }
 
-bool PlanningScene::callbackModifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
+bool PlanningScene::modifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
 		prm_planner_msgs::ModifyPlanningScene::Response& res)
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);

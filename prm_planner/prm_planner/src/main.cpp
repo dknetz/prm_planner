@@ -26,6 +26,8 @@ int main(int argc,
 
 		if (!ParameterServer::loadParameters())
 		{
+			ros::shutdown();
+			LOG_ERROR("You have not specified all parameters in the namespace " << n.getNamespace())
 			return -100;
 		}
 

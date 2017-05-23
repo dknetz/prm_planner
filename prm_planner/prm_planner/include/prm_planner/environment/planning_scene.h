@@ -50,6 +50,9 @@ public:
 	void lock();
 	void unlock();
 
+	bool modifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
+			prm_planner_msgs::ModifyPlanningScene::Response& res);
+
 public:
 	boost::shared_ptr<octomap::OcTree> octomap;
 	boost::shared_ptr<ais_point_cloud::RGBDImage> rgbd;
@@ -59,13 +62,10 @@ public:
 private:
 	void updateOctomap(const ais_point_cloud::MyPointCloudP cloud);
 
-	bool callbackModifyPlanningScene(prm_planner_msgs::ModifyPlanningScene::Request& req,
-			prm_planner_msgs::ModifyPlanningScene::Response& res);
-
 	static void filterPointCloud(const ais_point_cloud::MyPointCloudP& cloudIn,
-				ais_point_cloud::MyPointCloudP& cloudOut,
-				double prmRadius,
-				const Eigen::Vector3d& prmCenter);
+			ais_point_cloud::MyPointCloudP& cloudOut,
+			double prmRadius,
+			const Eigen::Vector3d& prmCenter);
 
 private:
 	boost::recursive_mutex m_mutex;
@@ -75,9 +75,6 @@ private:
 	ros::Publisher m_pubOctomap;
 	ros::Publisher m_pubWorkspace;
 	ros::Publisher m_pubObjects;
-
-	//subscribers
-	ros::ServiceServer m_serviceModifyPlanningScene;
 
 	boost::shared_ptr<ProblemDefinition> m_problemDefinition;
 

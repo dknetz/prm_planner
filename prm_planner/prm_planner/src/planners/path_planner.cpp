@@ -87,7 +87,7 @@ bool PathPlanner::plan(const KDL::JntArray& currentJointPose,
 			LOG_ERROR("Found collisions in start state between: ");
 			for (auto& it : col)
 			{
-				LOG_INFO("   - " << it.first->getName() << " " << it.second->getName());
+				LOG_INFO("   - " << it.first << " " << it.second);
 			}
 
 			return false;

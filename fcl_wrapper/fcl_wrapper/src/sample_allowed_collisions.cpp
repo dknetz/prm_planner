@@ -111,7 +111,7 @@ int main(int argc,
 
 	FCLWrapper fcl;
 	fcl.setUseCollisionMatrix(false);
-	FCLWrapper::CollisionsVector collisions;
+	FCLWrapper::CollisionsVectorObjects collisions;
 
 	CollisionMatrix cm;
 
@@ -128,9 +128,9 @@ int main(int argc,
 
 //		robot->print();
 
-		if (fcl.checkCollisions(true))
+		if (fcl.checkPairwiseCollisions(true))
 		{
-			fcl.getCollisions(collisions);
+			fcl.getPairwiseCollisions(collisions);
 
 			for (auto& it : collisions)
 			{

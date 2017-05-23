@@ -24,9 +24,9 @@
 #include <limits>
 #include <urdf_model/joint.h>
 
-#include <ais_log/data_logger.h>
+//#include <ais_log/data_logger.h>
 
-DATA_LOGGER_INIT();
+//DATA_LOGGER_INIT();
 
 namespace prm_planner
 {
@@ -513,6 +513,26 @@ template<int Dim, class Type>
 KDL::JntArray VelocityController<Dim, Type>::getJointStateFromRobot()
 {
 	return m_robotArm->getKDLJointState();
+}
+
+template<int Dim, class Type>
+Trajectory::Pose VelocityController<Dim, Type>::getCurrentPose()
+{
+	return m_x;
+}
+
+template<int Dim, class Type>
+Trajectory::Pose VelocityController<Dim, Type>::getGoalPose()
+{
+	return m_xGoal;
+}
+
+template<int Dim, class Type>
+Vector6d VelocityController<Dim, Type>::getDistToGoal()
+{
+	Vector6d e;
+	c_constraint->computeError(m_x, m_xGoal, e);
+	return e;
 }
 
 template<int Dim, class Type>

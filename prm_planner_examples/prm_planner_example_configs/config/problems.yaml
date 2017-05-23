@@ -1,0 +1,22 @@
+names:
+- single_arm_iiwa
+problems:
+    single_arm_iiwa:
+        robot: iiwa
+        root_frame: iiwa/iiwa_base_link
+        plugin_package: prm_planner
+        plugin_class: prm_planner::SingleArmProblemDefinition
+        planning:
+            planner_type: prm_a_star #prm_a_star database_cache
+            constraint: xyzrpy
+            planning_frame: iiwa/iiwa_base_link
+            prm:
+                filename: /tmp/prm.prm
+                save: true
+                size: 7000
+                visibility_distance: 0.3
+            rrt:
+                sample_goal: 0.2
+                max_expansion_distance: 0.1
+            database_cache:
+                filename: /home/kuhnerd/tmp/database_1000000.bin

@@ -75,6 +75,10 @@ public:
 
 	virtual KDL::JntArray getJointStateFromRobot();
 
+	virtual Trajectory::Pose getCurrentPose();
+	virtual Trajectory::Pose getGoalPose();
+	virtual Vector6d getDistToGoal();
+
 protected:
 	void initController();
 	void initTime();
