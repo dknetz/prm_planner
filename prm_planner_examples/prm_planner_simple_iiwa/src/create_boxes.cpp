@@ -30,10 +30,10 @@ int main(int argc,
 	o1.name = "box1";
 	o1.parent_frame = "/iiwa/iiwa_0_link";
 	o1.size =
-	{	0.5, 0.5, 0.5};
+	{	0.5, 0.5, 1.0};
 	o1.transformation.transform.translation.x = 1.0;
 	o1.transformation.transform.translation.y = 0.5;
-	o1.transformation.transform.translation.z = 0.25;
+	o1.transformation.transform.translation.z = 0.5;
 	o1.transformation.transform.rotation.w = 1.0;
 	o1.transformation.transform.rotation.x = 0.0;
 	o1.transformation.transform.rotation.y = 0.0;
@@ -47,6 +47,8 @@ int main(int argc,
 	o1.color.g = 1;
 	o1.color.b = 0;
 	o1.name = "box2";
+	o1.size =
+	{	0.5, 0.5, 0.5};
 	o1.transformation.transform.translation.x = 1.0;
 	o1.transformation.transform.translation.y = -0.5;
 	o1.transformation.transform.translation.z = 0.25;
