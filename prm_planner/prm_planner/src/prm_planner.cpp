@@ -982,7 +982,10 @@ bool PRMPlanner::planAndExecuteSync(const Eigen::Affine3d& goalPose,
 		while (ros::ok() && !m_executer->isGoalReached() && !m_executer->hasErrors())
 		{
 			if (m_goalActionServer->isPreemptRequested())
+			{
+				LOG_INFO("Aborting current goal");
 				m_executer->stopMotion();
+			}
 
 			r.sleep();
 		}

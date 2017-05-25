@@ -55,6 +55,23 @@ bool IiwaSimpleInterface::start()
 bool IiwaSimpleInterface::read(const ros::Time time,
 		const ros::Duration period)
 {
+	//apply commands
+	for (auto& it : m_data)
+	{
+		if (it.second.mode == JointData::Velocity)
+		{
+			it.second.pos += period.toSec() * it.second.cmdVel;
+		}
+		else if (it.second.mode == JointData::Torque)
+		{
+			LOG_ERROR("Not implemented");
+		}
+		else
+		{
+			it.second.pos = it.second.cmdPos;
+		}
+	}
+
 	sensor_msgs::JointState js;
 	js.header.stamp = ros::Time::now();
 	for (auto& it : m_data)
@@ -73,22 +90,6 @@ bool IiwaSimpleInterface::read(const ros::Time time,
 bool IiwaSimpleInterface::write(const ros::Time time,
 		const ros::Duration period)
 {
-	for (auto& it : m_data)
-	{
-		if (it.second.mode == JointData::Velocity)
-		{
-			it.second.pos += period.toSec() * it.second.cmdVel;
-		}
-		else if (it.second.mode == JointData::Torque)
-		{
-			LOG_ERROR("Not implemented");
-		}
-		else
-		{
-			it.second.pos = it.second.cmdPos;
-		}
-	}
-
 	return true;
 }
 

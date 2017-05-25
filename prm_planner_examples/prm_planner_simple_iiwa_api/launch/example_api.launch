@@ -1,0 +1,36 @@
+<launch>
+	<!-- Given the published joint states, publish tf for the robot links -->
+	<group ns="iiwa">
+		<param name="robot_description" textfile="$(find iiwa_description)/urdf/iiwa_sdh2.urdf" />
+
+		<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
+			<param name="tf_prefix" type="string" value="iiwa" />
+		</node>
+
+		<node name="joint_state_publisher" pkg="extended_joint_state_publisher" type="joint_state_publisher">
+			<param name="use_gui" type="bool" value="true" />
+			<rosparam param="joints_to_publish">["sdh2_thumb_3_joint", "sdh2_thumb_2_joint", "sdh2_thumb_1_joint", "sdh2_finger_23_joint", "sdh2_finger_22_joint", "sdh2_finger_21_joint", "sdh2_finger_13_joint", "sdh2_finger_12_joint", "sdh2_knuckle_joint"]</rosparam>
+		</node>
+
+		<param name="collision_matrix" type="string" value="$(find iiwa_description)/collision_matrices/iiwa_sdh2.cm" />
+	</group>
+
+	<node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find prm_planner_simple_iiwa_api)/rviz/example.rviz" output="screen" />
+
+	<!-- Adapt the namespace to load the needed parameters. By changing it you can also start multiple planners with different configurations -->
+	<group ns="/prm_planner">
+		<rosparam command="load" file="$(find prm_planner_simple_iiwa_api)/config/params.yaml" />
+		<rosparam command="load" ns="problem_definitions" file="$(find prm_planner_example_configs)/config/problems.yaml" />
+		<rosparam command="load" ns="robots" file="$(find prm_planner_example_configs)/config/robots.yaml" />
+
+		<!-- Setting paramters for fake execution -->
+		<param name="iiwa_simple_interface/joint_topic" type="string" value="/iiwa/joint_states" />
+		<rosparam param="iiwa_simple_interface/start_joint_names">['iiwa_1_joint', 'iiwa_7_joint', 'iiwa_3_joint', 'iiwa_4_joint', 'iiwa_2_joint', 'iiwa_5_joint', 'iiwa_6_joint']</rosparam>
+		<rosparam param="iiwa_simple_interface/start_joint_values">[-0.6210574965540798, 1.5897703552988893, 0.020926194496593244, -0.9747308226042651, 0.5854037987928191, -1.5979914159165352, -0.603824505061601]</rosparam>
+
+		<!-- Example node -->
+		<node name="prm_planner_api" pkg="prm_planner_simple_iiwa_api" type="prm_planner_api" output="screen" />
+	</group>
+
+	<node name="planning_scene_publisher" pkg="prm_planner_simple_iiwa_api" type="create_boxes2" />
+</launch>

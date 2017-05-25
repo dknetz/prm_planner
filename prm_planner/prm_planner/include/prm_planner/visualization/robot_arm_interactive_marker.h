@@ -84,6 +84,7 @@ private:
 	visualization_msgs::InteractiveMarkerFeedback::_menu_entry_id_type m_menuEntryReset;
 	visualization_msgs::InteractiveMarkerFeedback::_menu_entry_id_type m_menuEntryRandomValid;
 	visualization_msgs::InteractiveMarkerFeedback::_menu_entry_id_type m_menuEntrySavePose;
+	visualization_msgs::InteractiveMarkerFeedback::_menu_entry_id_type m_menuEntryPrintPose;
 
 	boost::shared_ptr<Constraint> m_constraint;
 	bool m_firstValid;

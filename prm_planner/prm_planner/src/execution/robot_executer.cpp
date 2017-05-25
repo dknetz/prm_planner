@@ -55,7 +55,8 @@ RobotExecuter::~RobotExecuter()
 
 bool RobotExecuter::isGoalReached() const
 {
-	return m_controller->isGoalReached();
+	EXECUTER_LOCK();
+	return m_pathSegments.size() == 0 && m_controller->isGoalReached();
 }
 
 bool RobotExecuter::hasErrors() const

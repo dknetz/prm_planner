@@ -130,6 +130,13 @@ void RobotArmInteractiveMarker::processFeedback(const visualization_msgs::Intera
 				file << std::endl;
 				file.close();
 			}
+			else if (feedback->menu_entry_id == m_menuEntryPrintPose)
+			{
+				Eigen::Affine3d pose;
+				tf::poseMsgToEigen(feedback->pose, pose);
+
+				LOG_INFO("Pose: \n" << pose.matrix());
+			}
 			break;
 		}
 		case visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE:
@@ -304,7 +311,8 @@ void RobotArmInteractiveMarker::initMenu()
 	m_menuEntryPlanAndExecute = m_menuHandler.insert("Plan and execute", boost::bind(&RobotArmInteractiveMarker::processFeedback, this, _1));
 	m_menuEntryReset = m_menuHandler.insert("Set to current robot pose", boost::bind(&RobotArmInteractiveMarker::processFeedback, this, _1));
 	m_menuEntryRandomValid = m_menuHandler.insert("Set to random valid", boost::bind(&RobotArmInteractiveMarker::processFeedback, this, _1));
-	m_menuEntrySavePose = m_menuHandler.insert("Save pose (/tmp folder)", boost::bind(&RobotArmInteractiveMarker::processFeedback, this, _1));
+	m_menuEntrySavePose = m_menuHandler.insert("Save joint pose (/tmp folder)", boost::bind(&RobotArmInteractiveMarker::processFeedback, this, _1));
+	m_menuEntryPrintPose = m_menuHandler.insert("Print pose", boost::bind(&RobotArmInteractiveMarker::processFeedback, this, _1));
 	m_menuHandler.apply(*m_server, m_interactiveMarker.name);
 }
 

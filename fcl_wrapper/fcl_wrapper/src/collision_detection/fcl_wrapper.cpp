@@ -126,7 +126,7 @@ void FCLWrapper::addObject(boost::shared_ptr<Collection> collection)
 		it.second->setUserData();
 	}
 
-	m_objectHierarchies[collection->getName()] = collection;
+	m_objectHierarchies[collection->getName()] = CONVERT_TO_STD_POINTER(collection);
 
 //	for (auto& it : objects)
 //	{
