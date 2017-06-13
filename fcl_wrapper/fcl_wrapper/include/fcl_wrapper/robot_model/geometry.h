@@ -16,11 +16,13 @@ namespace fcl_robot_model {
 
 class Geometry {
 public:
-	Geometry();
+	Geometry(const std::string& name);
 	virtual ~Geometry();
 
 	virtual void getFCLModel(const fcl::Transform3f& transform,
 			FCL_POINTER<fcl::CollisionObject>& fclCollisionModel) = 0;
+
+	std::string c_name;
 };
 
 } /* namespace fcl_robot_model */

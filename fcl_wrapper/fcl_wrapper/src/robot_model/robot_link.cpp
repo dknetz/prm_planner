@@ -90,7 +90,7 @@ void RobotLink::loadMesh(FCL_POINTER<RobotLinkModel>& model)
 		return;
 	}
 
-	FCL_POINTER<Meshes> meshes(new Meshes);
+	FCL_POINTER<Meshes> meshes(new Meshes(m_name));
 	meshes->m_meshes.resize(scene->mNumMeshes);
 	FOR_COUNTER(i, scene->mNumMeshes)
 	{

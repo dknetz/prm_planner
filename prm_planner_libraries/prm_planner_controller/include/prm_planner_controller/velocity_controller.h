@@ -35,6 +35,7 @@ FORWARD_DECLARE(Trajectory);
 FORWARD_DECLARE(RobotArm);
 FORWARD_DECLARE(Constraint);
 FORWARD_DECLARE(JacobianMultiSolver);
+FORWARD_DECLARE(Kinematics);
 
 template<int Dim, class Type = double>
 class VelocityController: public Controller, public ControllerEigenDefines<Dim, Type>
@@ -102,13 +103,15 @@ protected:
 
 protected:
 	Eigen::Vector3d m_posOld;
-	std::vector<Matrix6xN> m_jacobians;
+//	std::vector<Matrix6xN> m_jacobians;
 	Matrix6xN m_jacobian;
+	KDL::Jacobian m_kdlJacobian;
 	mutable boost::recursive_mutex m_mutex;
 	bool m_printJointRangeWarning;
 	bool m_success;
-	JacobianMultiSolver* m_jacobianSolver;
-	boost::shared_ptr<KDL::ChainFkSolverPos_recursive> m_fkSolver;
+//	JacobianMultiSolver* m_jacobianSolver;
+//	boost::shared_ptr<KDL::ChainFkSolverPos_recursive> m_fkSolver;
+	boost::shared_ptr<Kinematics> m_kinematics;
 	Type m_executionLength;
 	//	std::vector<KDL::JntArray> m_executedTrajectory;
 
@@ -123,7 +126,6 @@ protected:
 	VectorNd m_lambda; //Nx1
 
 	//always the same, compute it only once
-	std::vector<urdf::JointLimits> s_limits;
 	VectorNd s_limitRangeCenters;
 	VectorNd s_limitSquaredRange;
 	VectorNd s_limitVelocities;
@@ -167,7 +169,6 @@ public:
 	Type s_maxVelocityLimit;
 	boost::shared_ptr<Path> m_path;
 	boost::shared_ptr<Trajectory> m_trajectory;
-	boost::shared_ptr<ais_point_cloud::EasyKDTree> m_kdtree;
 };
 
 } /* namespace prm_planner */

@@ -1,0 +1,7 @@
+<library path="lib/librobot_fake_interface">
+	<class type="robot_fake_interface::RobotFakeInterface" base_class_type="prm_planner::RobotInterface">
+		<description>
+			iiwa vrep interface
+		</description>
+	</class>
+</library>

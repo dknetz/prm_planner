@@ -123,6 +123,10 @@ Mesh::Vertex::Vertex(const Eigen::Vector3d& position) :
 {
 }
 
+Meshes::Meshes(const std::string& name):Geometry(name)
+{
+}
+
 void Meshes::getFCLModel(const fcl::Transform3f& transform,
 		FCL_POINTER<fcl::CollisionObject>& fclCollisionModel)
 		{
@@ -155,6 +159,7 @@ void Meshes::getFCLModel(const fcl::Transform3f& transform,
 			if (!triangles.empty())
 			{
 				FCL_POINTER<BVHModel<OBBRSS>> model(new BVHModel<OBBRSS>());
+				model->setUserData(&c_name);
 
 				model->beginModel();
 				model->addSubModel(vertices, triangles);

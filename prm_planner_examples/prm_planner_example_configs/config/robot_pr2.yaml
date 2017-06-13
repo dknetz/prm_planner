@@ -1,0 +1,51 @@
+names:
+- pr2
+robots:
+    pr2:
+        arm_names:
+        - pr2
+        arms:
+            pr2:
+                start_link: torso_lift_link
+                end_link: r_wrist_roll_link
+                tool_frame: false
+                description: /pr2/robot_description
+                tf_prefix: pr2
+                controller_config: pr2_simulation
+                interface_package: robot_fake_interface
+                interface_class: robot_fake_interface::RobotFakeInterface
+                kinematics_package: prm_kinematics_pr2
+                kinematics_class: prm_kinematics_pr2::PR2Kinematics
+                follow_joint_trajectory_topic: /
+                joint_state_topic: /
+controller_configs:
+    pr2_simulation:
+        name: VelocityController7DOF
+        frequency: 250
+        max_velocity: 0.7
+        k:
+        - 10
+        - 10
+        - 10
+        - 3
+        - 3
+        - 3
+        lambda: 1.7
+        least_square_lambda_max: 0.04
+        least_square_epsilon: 0.04
+        debug: false
+        goal_dist_pos: 0.015
+        goal_dist_ang: 0.02
+        collision_avoidance:
+            use: false
+            vel_0: 3.0
+            distance_1: 0.2
+            distance_2: 0.5
+            max_vel: 0.7
+            ratio_do_collision_checks: 1.0
+        max_task_vel:
+            linear: 0.05
+            angular: 0.2
+        joint_range_weight:
+            default: 0.3
+            std: 0.3

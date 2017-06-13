@@ -65,6 +65,8 @@ struct RobotArmConfig
 	std::string controllerConfig;
 	std::unordered_map<std::string, RobotJointSampleLimits> sampleLimits;
 	ControlMode controlMode;
+	std::string kinematicsPackage;
+	std::string kinematicsClass;
 };
 
 struct TrajectoryWaypoint

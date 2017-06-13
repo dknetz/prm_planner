@@ -210,6 +210,7 @@ bool SimulationRobotController::canControl(const double maxWaitTime,
 //	LOG_INFO(c2 / c1);
 //	LOG_INFO(c3 / c1);
 //	writeF("time", dPos, dAng);
+
 	return false;
 }
 

@@ -139,6 +139,10 @@ struct ArmConfig
 
 	//single arm constraint
 	std::string singleArmConstraint;
+
+	//kinematics plugin
+	std::string kinematicsPluginPackage;
+	std::string kinematicsPluginClass;
 };
 
 struct RobotConfig

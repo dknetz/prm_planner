@@ -20,6 +20,7 @@
 #include <prm_planner_controller/velocity_controller.h>
 #include <prm_planner_robot/path.h>
 #include <prm_planner_robot/robot_arm.h>
+#include <prm_planner_robot/kinematics.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <limits>
 #include <urdf_model/joint.h>
@@ -49,7 +50,7 @@ VelocityController<Dim, Type>::VelocityController(const ControllerParameters& pa
 				m_counter(0),
 				m_success(true),
 				m_printJointRangeWarning(true),
-				m_jacobianSolver(NULL),
+//				m_jacobianSolver(NULL),
 				m_executionLength(0),
 				m_xDesiredDot(Vector6d::Zero()),
 				c_planningFrame(planningFrame),
@@ -60,7 +61,8 @@ VelocityController<Dim, Type>::VelocityController(const ControllerParameters& pa
 				m_goalSend(false),
 				m_getFirstPathData(false),
 				m_currentWaypoint(0),
-				m_fkSolver(m_robotArm->getNewFkSolverInstance())
+				m_kdlJacobian(Dim)
+//				m_fkSolver(m_robotArm->getNewFkSolverInstance())
 {
 	initTime();
 //	if (parameters.debug)
@@ -70,7 +72,7 @@ VelocityController<Dim, Type>::VelocityController(const ControllerParameters& pa
 template<int Dim, class Type>
 VelocityController<Dim, Type>::~VelocityController()
 {
-	DELETE_VAR(m_jacobianSolver);
+//	DELETE_VAR(m_jacobianSolver);
 }
 
 template<int Dim, class Type>
@@ -132,13 +134,6 @@ void VelocityController<Dim, Type>::init()
 		s_pubTrajectory[c_armName] = n.advertise<nav_msgs::Path>("trajectory/" + c_armName, 5);
 	}
 }
-
-//template<int Dim, class Type>
-//void VelocityController<Dim, Type>::setKdTree(boost::shared_ptr<ais_point_cloud::EasyKDTree> kdtree)
-//{
-//	boost::recursive_mutex::scoped_lock lock(m_mutex);
-//	m_kdtree = kdtree;
-//}
 
 template<int Dim, class Type>
 void VelocityController<Dim, Type>::publish()
@@ -357,10 +352,10 @@ bool VelocityController<Dim, Type>::update(const ros::Time& now,
 	//Hardware Interface: Get data as long as there is no trajectory
 	//creation is active
 	m_robotArm->receiveData(m_now, m_dt);
-	m_q = m_robotArm->getKDLJointState();
+	m_q = m_robotArm->getKDLChainJointState();
 
 	m_xOld = m_x;
-	m_x.reset(m_fkSolver, m_q);
+	m_x.reset(m_kinematics, m_q);
 	pos = m_x.x.head(3);
 	m_mutex.lock();
 	m_executionLength += (pos - m_posOld).norm();
@@ -368,8 +363,8 @@ bool VelocityController<Dim, Type>::update(const ros::Time& now,
 	m_mutex.unlock();
 
 	//compute Jacobian
-	m_jacobianSolver->template GetAllJacobians<Dim>(m_q, m_jacobians);
-	m_jacobian = m_jacobians.back();
+	m_kinematics->getJacobian(m_q, m_kdlJacobian);
+	m_jacobian = m_kdlJacobian.data;
 
 	//and inverse
 	computeDampedLeastSquarePseudoInverse(m_jacobian, m_pseudoInverse, c_parameters);
@@ -453,27 +448,40 @@ void VelocityController<Dim, Type>::initController()
 	m_trajectory.reset();
 	m_path.reset();
 	m_xDesiredDot = Vector6d::Zero();
-	m_fkSolver = m_robotArm->getNewFkSolverInstance();
+	m_kinematics = m_robotArm->getKinematics()->getCopy(m_robotArm.get());
 
-	DELETE_VAR(m_jacobianSolver);
-	m_jacobianSolver = new JacobianMultiSolver(m_robotArm->getChain());
+//	m_jacobianSolver = new JacobianMultiSolver(m_robotArm->getChain());
 
 	//get transformation betweem planning and arm frame
 	m_transformationPlanningFrameToArm = ais_ros::RosBaseInterface::getRosTransformation(c_planningFrame, c_armFrame);
 
 	//pre-compute some required values for the redundant part of the controller
 	//get joint limits
-	s_limits.clear();
-	m_robotArm->getChainJointLimits(s_limits);
+	std::vector<urdf::Joint> joints;
+	m_robotArm->getChainJoints(joints);
 
 	s_maxVelocityLimit = std::numeric_limits<double>::max();
-	for (size_t i = 0; i < s_limits.size(); ++i)
+	for (size_t i = 0; i < joints.size(); ++i)
 	{
-		s_limitUpper(i, 0) = s_limits[i].upper;
-		s_limitLower(i, 0) = s_limits[i].lower;
-		s_limitRangeCenters(i, 0) = (s_limits[i].lower + s_limits[i].upper) / 2.0;
-		s_limitSquaredRange(i, 0) = (s_limits[i].upper - s_limits[i].lower) * (s_limits[i].upper - s_limits[i].lower);
-		s_limitVelocities(i, 0) = std::min<double>(s_limits[i].velocity, c_parameters.maxVelocity);
+		boost::shared_ptr<urdf::JointLimits> limits;
+		if (joints[i].type == urdf::Joint::CONTINUOUS)
+		{
+			limits.reset(new urdf::JointLimits);
+			limits->upper = std::numeric_limits<double>::max();
+			limits->lower = std::numeric_limits<double>::lowest();
+			limits->velocity = joints[i].limits->velocity;
+			limits->effort = joints[i].limits->effort;
+		}
+		else
+		{
+			limits = joints[i].limits;
+		}
+
+		s_limitUpper(i, 0) = limits->upper;
+		s_limitLower(i, 0) = limits->lower;
+		s_limitRangeCenters(i, 0) = (limits->lower + limits->upper) / 2.0;
+		s_limitSquaredRange(i, 0) = (limits->upper - limits->lower) * (limits->upper - limits->lower);
+		s_limitVelocities(i, 0) = std::min<double>(limits->velocity, c_parameters.maxVelocity);
 
 		//get min velocity for normalization
 		if (s_limitVelocities(i, 0) < s_maxVelocityLimit)
@@ -501,7 +509,7 @@ void VelocityController<Dim, Type>::initController()
 
 	//get joint state
 	m_q = getJointStateFromRobot();
-	m_x = m_x0 = m_xGoal = m_xPredicted = m_xPredictedOld = Trajectory::Pose(m_fkSolver, m_q);
+	m_x = m_x0 = m_xGoal = m_xPredicted = m_xPredictedOld = Trajectory::Pose(m_kinematics, m_q);
 
 	//collision bubbles
 	resetCollisionStrip(m_q);
@@ -512,7 +520,7 @@ void VelocityController<Dim, Type>::initController()
 template<int Dim, class Type>
 KDL::JntArray VelocityController<Dim, Type>::getJointStateFromRobot()
 {
-	return m_robotArm->getKDLJointState();
+	return m_robotArm->getKDLChainJointState();
 }
 
 template<int Dim, class Type>
@@ -579,6 +587,7 @@ bool VelocityController<Dim, Type>::isValidCommand(const KDL::JntArray& cmd,
 		const Type& errorBound)
 {
 	VectorNd xIntegrated = m_q.data + cmd.data * dt;
+
 	for (size_t i = 0; i < s_limitLower.size(); ++i)
 	{
 		if (xIntegrated(i, 0) <= s_limitLower(i, 0) + errorBound || xIntegrated(i, 0) >= s_limitUpper(i, 0) - errorBound)
@@ -667,8 +676,11 @@ void VelocityController<Dim, Type>::resetCollisionStrip(const KDL::JntArray& joi
 			continue;
 		}
 
-		m_fkSolver->JntToCart(joints, x, i);
-		m_jacobianSolver->JntToJac(m_q, j, i);
+		m_kinematics->getFK(joints, x, i);
+		m_kinematics->getJacobian(m_q, m_kdlJacobian, i);
+		j = m_kdlJacobian.data;
+//		m_fkSolver->JntToCart(joints, x, i);
+//		m_jacobianSolver->JntToJac(m_q, j, i);
 		if (j.isZero())
 		{
 			continue;

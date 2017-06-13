@@ -1,0 +1,7 @@
+<library path="lib/libprm_kinematics_kdl">
+	<class type="prm_kinematics_kdl::KDLKinematics" base_class_type="prm_planner::Kinematics">
+		<description>
+			Default PRM Planner kinematics based on KDL 
+		</description>
+	</class>
+</library>

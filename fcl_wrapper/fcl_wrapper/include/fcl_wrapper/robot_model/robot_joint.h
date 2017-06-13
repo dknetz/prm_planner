@@ -39,8 +39,16 @@ public:
 	typedef std::pair<std::string, FCL_POINTER<RobotLink>> LinkPair;
 
 public:
+	enum Type
+	{
+		Revolute,
+		Prismatic,
+		Fixed
+	};
+
 	RobotJoint(const std::string& name,
 			const Eigen::Vector3d& axis,
+			const Type& type,
 			const double lowerLimit,
 			const double upperLimit,
 			const double speedLimit,
@@ -57,8 +65,8 @@ public:
 
 	std::string getName() const;
 
-	void setAngle(const double angle);
-	double getAngle() const;
+	void setJointValue(const double jointValue);
+	double getJointValue() const;
 
 	double getUpperJointLimit() const;
 	double getLowerJointLimit() const;
@@ -75,15 +83,17 @@ private:
 	const Eigen::Affine3d c_transformationToParentLink;
 	Eigen::Affine3d m_transformationJoint;
 	Eigen::Affine3d m_transformationToParentLink;
-	double m_angle;
+	double m_jointValue;
 	double m_upperLimit;
 	double m_lowerLimit;
 	double m_velocitiyLimit;
+	Type m_type;
 
 public:
 	friend class RobotModel;
 };
 
-} /* namespace robot_model */
+}
+/* namespace robot_model */
 
 #endif /* zrR713FN6TiHNgEaVGQh */

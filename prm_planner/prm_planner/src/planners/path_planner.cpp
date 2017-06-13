@@ -74,7 +74,7 @@ bool PathPlanner::plan(const KDL::JntArray& currentJointPose,
 	{
 		int i = 0;
 		fcl_robot_model::RobotState state;
-		for (auto& it2 : m_robot->getJointNames())
+		for (auto& it2 : m_robot->getChainJointNames())
 		{
 			state[it2] = currentJointPose(i++);
 		}

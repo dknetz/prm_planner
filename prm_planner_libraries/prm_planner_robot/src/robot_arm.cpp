@@ -58,36 +58,41 @@ RobotArm::RobotArm(const RobotArmConfig& armConfig,
 		if (m_chain.getSegment(i).getJoint().getType() != KDL::Joint::None)
 		{
 			std::string name = m_chain.getSegment(i).getJoint().getName();
-			m_jointNames.push_back(name);
-			m_rosJointState.name.push_back(name);
+			m_chainJointNames.push_back(name);
 		}
 	}
 
 	//kdl joint limits
-	m_limitMin.resize(m_jointNames.size());
-	m_limitMax.resize(m_jointNames.size());
+	m_chainLimitMin.resize(m_chainJointNames.size());
+	m_chainLimitMax.resize(m_chainJointNames.size());
 	size_t i = 0;
-	for (auto& it : m_jointNames)
+	for (auto& it : m_chainJointNames)
 	{
-		m_limitMin(i, 0) = m_urdf.joints_[it]->limits->lower + 0.05;
-		m_limitMax(i, 0) = m_urdf.joints_[it]->limits->upper - 0.05;
+		//don't apply the offsets to continuous joints
+		if (m_urdf.joints_[it]->type == urdf::Joint::CONTINUOUS)
+		{
+			m_chainLimitMin(i, 0) = -M_PI;
+			m_chainLimitMax(i, 0) = M_PI;
+		}
+		else
+		{
+			m_chainLimitMin(i, 0) = m_urdf.joints_[it]->limits->lower + 0.05;
+			m_chainLimitMax(i, 0) = m_urdf.joints_[it]->limits->upper - 0.05;
+		}
+
+		LOG_INFO(m_chain.getSegment(i).getJoint().getName() << " "<<m_chainLimitMin(i, 0) << " " << m_chainLimitMax(i, 0));
 		++i;
 	}
 
-	//setup solvers
-	m_fkSolver.reset(new KDL::ChainFkSolverPos_recursive(m_chain));
-	m_ikVelSolver.reset(new KDL::ChainIkSolverVel_pinv(m_chain));
-	m_ikSolver.reset(new KDL::ChainIkSolverPos_NR_JL(m_chain, m_limitMin, m_limitMax, *m_fkSolver, *m_ikVelSolver));
-	m_jacobianSolver.reset(new KDL::ChainJntToJacSolver(m_chain));
+	//setup kinematics
+	m_kinematics = Kinematics::load(c_armConfig.kinematicsPackage, c_armConfig.kinematicsClass);
+	m_kinematics->init(this);
 
-	m_rosJointState.position.resize(m_jointNames.size());
-	m_rosJointState.velocity.resize(m_jointNames.size());
-	m_positions.resize(m_jointNames.size());
+	m_chainPositions.resize(m_chainJointNames.size());
+	m_chainPositions.data.fill(0);
 
-	m_positions.data.fill(0);
-
-	m_velocities.resize(m_jointNames.size());
-	m_commands.resize(m_jointNames.size());
+	m_chainVelocities.resize(m_chainJointNames.size());
+	m_chainCommands.resize(m_chainJointNames.size());
 
 	if (initRobotConnection)
 	{
@@ -145,13 +150,10 @@ void RobotArm::initHardwareInterface()
 	else
 	{
 		int i = 0;
-		for (auto& it : m_jointNames)
+		for (auto& it : m_chainJointNames)
 		{
-			m_positions.data[i] = 0;
-			m_velocities.data[i] = 0;
-			m_rosJointState.header.stamp = ros::Time::now();
-			m_rosJointState.position[i] = 0;
-			m_rosJointState.velocity[i] = 0;
+			m_chainPositions.data[i] = 0;
+			m_chainVelocities.data[i] = 0;
 			++i;
 		}
 	}
@@ -162,30 +164,40 @@ boost::shared_ptr<urdf::JointLimits> RobotArm::getJointLimits(const std::string&
 	return m_urdf.joints_[name]->limits;
 }
 
-void RobotArm::getChainJointLimits(std::vector<urdf::JointLimits>& out)
+const KDL::JntArray& RobotArm::getChainLimitMax() const
+{
+	return m_chainLimitMax;
+}
+
+const KDL::JntArray& RobotArm::getChainLimitMin() const
+{
+	return m_chainLimitMin;
+}
+
+void RobotArm::getChainJoints(std::vector<urdf::Joint>& out)
 {
 	std::string jointName;
-	for (auto& seg : m_jointNames)
+	for (auto& seg : m_chainJointNames)
 	{
-		out.push_back(*m_urdf.joints_[seg]->limits);
+		out.push_back(*m_urdf.joints_[seg]);
 	}
 }
 
-sensor_msgs::JointState RobotArm::getROSJointPose() const
+KDL::JntArray RobotArm::getKDLChainJointState() const
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_rosJointState;
+	return m_chainPositions;
 }
 
-KDL::JntArray RobotArm::getKDLJointState() const
+std::unordered_map<std::string, double> RobotArm::getAllJointStates() const
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_positions;
+	return m_allPositions;
 }
 
-KDL::JntArray RobotArm::getKDLVelocities() const
+KDL::JntArray RobotArm::getKDLChainVelocities() const
 {
-	return m_velocities;
+	return m_chainVelocities;
 }
 
 void RobotArm::receiveData(const ros::Time& time,
@@ -200,16 +212,19 @@ void RobotArm::receiveData(const ros::Time& time,
 
 		boost::recursive_mutex::scoped_lock lock(m_mutex);
 
+		//get all joint states
+		for (auto& it : data)
+		{
+			m_allPositions[it.first] = it.second.pos;
+		}
+
 		//fill kdl vectors
 		int i = 0;
-		for (auto& it : m_jointNames)
+		for (auto& it : m_chainJointNames)
 		{
 			RobotInterface::JointData& j = data[it];
-			m_positions.data[i] = j.pos;
-			m_velocities.data[i] = j.vel;
-			m_rosJointState.header.stamp = ros::Time::now();
-			m_rosJointState.position[i] = j.pos;
-			m_rosJointState.velocity[i] = j.vel;
+			m_chainPositions.data[i] = j.pos;
+			m_chainVelocities.data[i] = j.vel;
 
 			++i;
 		}
@@ -225,40 +240,39 @@ void RobotArm::receiveJointState(const sensor_msgs::JointStateConstPtr& jointSta
 
 	std::unordered_map<std::string, size_t> mapping;
 	double pos = 0, vel = 0;
+	std::string n;
 
 	//no data => return
 	if (jointState->name.empty())
 		return;
 
 	//wronge joint state => return
-	if (std::find(jointState->name.begin(), jointState->name.end(), m_jointNames[0]) == jointState->name.end())
+	if (std::find(jointState->name.begin(), jointState->name.end(), m_chainJointNames[0]) == jointState->name.end())
 		return;
 
 	//Create a mapping between name and id of the message
+	boost::recursive_mutex::scoped_lock lock(m_mutex);
 	for (size_t i = 0; i < jointState->name.size(); ++i)
 	{
-		mapping[jointState->name[i]] = i;
+		n = jointState->name[i];
+		m_allPositions[n] = jointState->position[i];
+		mapping[n] = i;
 	}
 
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-
-	for (size_t i = 0; i < m_jointNames.size(); ++i)
+	for (size_t i = 0; i < m_chainJointNames.size(); ++i)
 	{
 		//get id
-		const int id = mapping[m_jointNames[i]];
+		const int id = mapping[m_chainJointNames[i]];
 
 		//get data
 		pos = jointState->position[id];
 
 		//since velocity is not allways send
-		if (jointState->velocity.size() >= m_jointNames.size())
+		if (jointState->velocity.size() >= m_chainJointNames.size())
 			vel = jointState->velocity[id];
 
-		m_positions.data[i] = pos;
-		m_velocities.data[i] = vel;
-		m_rosJointState.header.stamp = ros::Time::now();
-		m_rosJointState.position[i] = pos;
-		m_rosJointState.velocity[i] = vel;
+		m_chainPositions.data[i] = pos;
+		m_chainVelocities.data[i] = vel;
 	}
 
 	m_receivedState = true;
@@ -270,7 +284,7 @@ void RobotArm::sendVelocity(const ros::Time& time,
 {
 	if (c_armConfig.executionInterface == ArmExecutionMode::HardwareInterface && !m_passiveMode)
 	{
-		m_interface->setJointVelocityCommand(cmd, m_jointNames);
+		m_interface->setJointVelocityCommand(cmd, m_chainJointNames);
 
 		if (!m_interface->write(time, period))
 			LOG_ERROR("Cannot send data!");
@@ -283,18 +297,18 @@ void RobotArm::sendTorque(const ros::Time& time,
 {
 	if (c_armConfig.executionInterface == ArmExecutionMode::HardwareInterface && !m_passiveMode)
 	{
-		m_interface->setJointTorqueCommand(cmd, m_jointNames);
+		m_interface->setJointTorqueCommand(cmd, m_chainJointNames);
 
 		if (!m_interface->write(time, period))
 			LOG_ERROR("Cannot send data!");
 	}
 }
 
-void RobotArm::sendJointPosition(const KDL::JntArray& joints)
+void RobotArm::sendChainJointPosition(const KDL::JntArray& joints)
 {
 	if (c_armConfig.executionInterface == ArmExecutionMode::HardwareInterface && !m_passiveMode)
 	{
-		m_interface->setJointPositionCommand(joints, m_jointNames);
+		m_interface->setJointPositionCommand(joints, m_chainJointNames);
 
 		m_interface->write();
 	}
@@ -318,40 +332,25 @@ void RobotArm::stopMotion()
 	}
 }
 
-boost::shared_ptr<KDL::ChainFkSolverPos_recursive> RobotArm::getNewFkSolverInstance() const
-{
-	return boost::shared_ptr<KDL::ChainFkSolverPos_recursive>(new KDL::ChainFkSolverPos_recursive(m_chain));
-}
-
-//const boost::shared_ptr<KDL::ChainIkSolverPos> RobotArm::getIkSolver() const
-//{
-//	return m_ikSolver;
-//}
-
-//const boost::shared_ptr<KDL::ChainJntToJacSolver> RobotArm::getJacobianSolver() const
-//{
-//	return m_jacobianSolver;
-//}
-
-void RobotArm::sampleValidEEFPose(Eigen::Affine3d& pose,
+void RobotArm::sampleValidChainEEFPose(Eigen::Affine3d& pose,
 		KDL::JntArray& joints,
 		const double borderAvoidance)
 {
-	sampleValidJointState(joints, borderAvoidance);
+	sampleValidChainJointState(joints, borderAvoidance);
 	getFK(joints, pose);
 }
 
-void RobotArm::sampleValidJointState(KDL::JntArray& jointState,
+void RobotArm::sampleValidChainJointState(KDL::JntArray& jointState,
 		const double borderAvoidance)
 {
 	std::default_random_engine re(std::chrono::system_clock::now().time_since_epoch().count());
 
-	jointState.resize(m_jointNames.size());
+	jointState.resize(m_chainJointNames.size());
 
 	double lower, upper;
 
 	int i = 0;
-	for (auto& it : m_jointNames)
+	for (auto& it : m_chainJointNames)
 	{
 		if (CHECK_MAP(c_armConfig.sampleLimits, it))
 		{
@@ -373,42 +372,32 @@ void RobotArm::sampleValidJointState(KDL::JntArray& jointState,
 bool RobotArm::getIK(const Eigen::Affine3d& pose,
 		KDL::JntArray& ik)
 {
-	KDL::JntArray init(m_jointNames.size());
+	KDL::JntArray init(m_chainJointNames.size());
 	return getIKWithInit(init, pose, ik);
 }
 
 bool RobotArm::getIKWithInitCurrent(const Eigen::Affine3d& pose,
 		KDL::JntArray& ik)
 {
-	return getIKWithInit(getKDLJointState(), pose, ik);
+	return getIKWithInit(getKDLChainJointState(), pose, ik);
 }
 
 bool RobotArm::getIKWithInit(const KDL::JntArray& init,
 		const Eigen::Affine3d& pose,
 		KDL::JntArray& ik)
 {
-	boost::recursive_mutex::scoped_lock lock(m_kdlMutex);
-	KDL::Frame x;
-	tf::transformEigenToKDL(pose, x);
-	return m_ikSolver->CartToJnt(init, x, ik) >= 0;
+	return m_kinematics->getIK(pose, init, ik);
 }
 
 bool RobotArm::getFK(const KDL::JntArray& joints,
 		Eigen::Affine3d& pose)
 {
-	boost::recursive_mutex::scoped_lock lock(m_kdlMutex);
-	KDL::Frame x;
-	m_fkSolver->JntToCart(joints, x);
-	tf::transformKDLToEigen(x, pose);
-	double r,p,y;
-	x.M.GetRPY(r,p,y);
-
-	return true;
+	return m_kinematics->getFK(joints, pose);
 }
 
 bool RobotArm::getCurrentFK(Eigen::Affine3d& pose)
 {
-	KDL::JntArray joints = getKDLJointState();
+	KDL::JntArray joints = getKDLChainJointState();
 	return getFK(joints, pose);
 }
 
@@ -417,33 +406,14 @@ const KDL::Chain& RobotArm::getChain() const
 	return m_chain;
 }
 
-const std::vector<std::string>& RobotArm::getJointNames() const
+const std::vector<std::string>& RobotArm::getChainJointNames() const
 {
-	return m_jointNames;
+	return m_chainJointNames;
 }
 
 const KDL::Tree& RobotArm::getRobot() const
 {
 	return m_robot;
-}
-
-void RobotArm::getNewFKandIK(KDL::ChainIkSolverVel_pinv*& ikVel,
-		KDL::ChainFkSolverPos_recursive*& fk,
-		KDL::ChainIkSolverPos_NR_JL*& ik)
-{
-	std::vector<urdf::JointLimits> limits;
-	getChainJointLimits(limits);
-
-	KDL::JntArray upper(limits.size()), lower(limits.size());
-	for (size_t i = 0; i < limits.size(); ++i)
-	{
-		upper(i, 0) = limits[i].upper - 0.05;
-		lower(i, 0) = limits[i].lower + 0.05;
-	}
-
-	ikVel = new KDL::ChainIkSolverVel_pinv(m_chain);
-	fk = new KDL::ChainFkSolverPos_recursive(m_chain);
-	ik = new KDL::ChainIkSolverPos_NR_JL(m_chain, lower, upper, *fk, *ikVel, 100, 1e-2);
 }
 
 const std::string& RobotArm::getRobotDescription() const
@@ -582,10 +552,7 @@ void RobotArm::setToolCenterPointTransformation(const Eigen::Affine3d& tcp)
 	}
 
 	//setup solvers
-	m_fkSolver.reset(new KDL::ChainFkSolverPos_recursive(m_chain));
-	m_ikVelSolver.reset(new KDL::ChainIkSolverVel_pinv(m_chain));
-	m_ikSolver.reset(new KDL::ChainIkSolverPos_NR_JL(m_chain, m_limitMin, m_limitMax, *m_fkSolver, *m_ikVelSolver));
-	m_jacobianSolver.reset(new KDL::ChainJntToJacSolver(m_chain));
+	m_kinematics->init(this);
 
 	m_tcp = tcp;
 	m_useTCP = true;
@@ -601,13 +568,10 @@ void RobotArm::setPassiveMode(const bool passive)
 	m_passiveMode = passive;
 }
 
-void RobotArm::setJointState(const KDL::JntArray& joints)
+void RobotArm::setChainJointState(const KDL::JntArray& joints)
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	m_positions = joints;
-
-	for (size_t i = 0; i < joints.rows(); ++i)
-		m_rosJointState.position[i] = joints(i);
+	m_chainPositions = joints;
 }
 
 Eigen::Affine3d RobotArm::getTcp() const
@@ -620,6 +584,16 @@ bool RobotArm::isUseTcp() const
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 	return m_useTCP;
+}
+
+const boost::shared_ptr<Kinematics>& RobotArm::getKinematics() const
+{
+	return m_kinematics;
+}
+
+const urdf::Model& RobotArm::getUrdf() const
+{
+	return m_urdf;
 }
 
 } /* namespace prm_planner */

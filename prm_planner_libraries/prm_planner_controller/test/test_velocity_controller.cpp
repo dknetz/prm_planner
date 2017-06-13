@@ -18,6 +18,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 #include <eigen_conversions/eigen_kdl.h>
+#include <kdl/chainiksolvervel_pinv.hpp>
 #include <vrep_interface/v_rep_interface.h>
 #include <vrep_interface/v_rep_iiwa.h>
 #include <fstream>
@@ -162,12 +163,12 @@ int main(int argc,
 	//set this pose
 	vrep_interface::VRepInterface::getInstance()->stopSimulation();
 	sleep(1);
-	robot->sendJointPosition(q);
+	robot->sendChainJointPosition(q);
 	vrep_interface::VRepInterface::getInstance()->startSimulation();
 
 	//get state
 	robot->receiveData(t, dt);
-	q = robot->getKDLJointState();
+	q = robot->getKDLChainJointState();
 
 	//gains
 	Eigen::Matrix<double, 6, 6> K;
@@ -182,7 +183,7 @@ int main(int argc,
 	t = ros::Time::now();
 	dt = t - tOld;
 	robot->receiveData(t, dt);
-	q = robot->getKDLJointState();
+	q = robot->getKDLChainJointState();
 
 	const double velTraj = 0.5;
 
@@ -195,7 +196,7 @@ int main(int argc,
 
 		//get data
 		robot->receiveData(t, dt);
-		q = robot->getKDLJointState();
+		q = robot->getKDLChainJointState();
 
 		//get eef pose
 		fksolver.JntToCart(q, kdlCurrent);

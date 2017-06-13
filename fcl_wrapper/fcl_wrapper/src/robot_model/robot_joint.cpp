@@ -28,6 +28,7 @@ namespace fcl_robot_model
 
 RobotJoint::RobotJoint(const std::string& name,
 		const Eigen::Vector3d& axis,
+		const Type& type,
 		const double lowerLimit,
 		const double upperLimit,
 		const double speedLimit,
@@ -37,13 +38,14 @@ RobotJoint::RobotJoint(const std::string& name,
 				c_transformationToParentLink(transformationToParentLink),
 				m_transformationJoint(Eigen::Affine3d::Identity()),
 				m_transformationToParentLink(Eigen::Affine3d::Identity()),
-				m_angle(0),
+				m_jointValue(0),
 				m_lowerLimit(lowerLimit),
 				m_upperLimit(upperLimit),
-				m_velocitiyLimit(speedLimit)
+				m_velocitiyLimit(speedLimit),
+				m_type(type)
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	setAngle(m_angle);
+	setJointValue(m_jointValue);
 }
 
 RobotJoint::~RobotJoint()
@@ -95,22 +97,45 @@ Eigen::Affine3d RobotJoint::getTransformationToParent(const double angle) const
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 	Eigen::Affine3d joint;
 	joint.setIdentity();
-	joint.linear() = Eigen::AngleAxisd(angle, m_axis).toRotationMatrix();
+	if (m_type == Fixed)
+	{
+		//do nothing
+	}
+	else if (m_type == Prismatic)
+	{
+		joint.translation() = m_axis * angle;
+	}
+	else
+	{
+		joint.linear() = Eigen::AngleAxisd(angle, m_axis).toRotationMatrix();
+	}
 	return c_transformationToParentLink * joint;
 }
 
-void RobotJoint::setAngle(const double angle)
+void RobotJoint::setJointValue(const double jointValue)
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	m_transformationJoint.linear() = Eigen::AngleAxisd(angle, m_axis).toRotationMatrix();
+	if (m_type == Fixed)
+	{
+		//do nothing
+	}
+	else if (m_type == Prismatic)
+	{
+		m_transformationJoint.translation() = m_axis * jointValue;
+	}
+	else
+	{
+		m_transformationJoint.linear() = Eigen::AngleAxisd(jointValue, m_axis).toRotationMatrix();
+	}
+
 	m_transformationToParentLink = c_transformationToParentLink * m_transformationJoint;
-	m_angle = angle;
+	m_jointValue = jointValue;
 }
 
-double RobotJoint::getAngle() const
+double RobotJoint::getJointValue() const
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_angle;
+	return m_jointValue;
 }
 
 double RobotJoint::getUpperJointLimit() const
@@ -141,7 +166,8 @@ void RobotJoint::print(int depth) const
 	std::string tabs(depth, '\t');
 	LOG_INFO(tabs<<"-JOINT-----------------------------");
 	LOG_INFO(tabs<<"name: " << m_name);
-	LOG_INFO(tabs<<"angle: " << m_angle);
+	LOG_INFO(tabs<<"type: " << m_type);
+	LOG_INFO(tabs<<"jointValue: " << m_jointValue);
 	LOG_INFO(tabs<<"translation: " << Eigen::Vector3d(c_transformationToParentLink.translation()).transpose());
 	Eigen::Vector3d angles = c_transformationToParentLink.rotation().eulerAngles(0, 1, 2);
 	LOG_INFO(tabs<<"rotation: " << angles.transpose());

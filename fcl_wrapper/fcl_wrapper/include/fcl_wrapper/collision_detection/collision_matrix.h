@@ -42,8 +42,8 @@ public:
 	void init();
 
 	void addOtherCollisionMatrix(const CollisionMatrix::Ptr& collisionMatrix);
-	void setPrefix(const std::string& prefix,
-			const std::list<std::string>& exclude); //without /
+//	void setPrefix(const std::string& prefix,
+//			const std::list<std::string>& exclude); //without /
 
 	void set(const std::string& link1,
 			const std::string& link2,
@@ -52,7 +52,7 @@ public:
 	void setDoAllCollisionChecks(const std::string& object,
 			bool canHaveCollision);
 
-	bool collide(const std::string& link1,
+	bool canCollide(const std::string& link1,
 			const std::string& link2);
 
 	void print();
@@ -65,6 +65,7 @@ public:
 
 private:
 	CM m_collisionMatrix;
+//	std::string m_prefix;
 	std::unordered_map<std::string, bool> m_checkAllways;
 };
 

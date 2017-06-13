@@ -226,6 +226,9 @@ void PRMPlanner::initObjectStates()
 	auto& objects = m_objectManager->getObjects();
 	boost::shared_ptr<GripperInterface> gripper = m_robot->getGripper();
 
+	if (gripper.get() == NULL)
+		return;
+
 	//gripper already has an object
 	if (!gripper->getCurrentObject().empty())
 		return;
@@ -361,7 +364,7 @@ void PRMPlanner::callbackHandJointState(const ros::MessageEvent<sensor_msgs::Joi
 	std::unordered_map<std::string, double> state;
 
 	sensor_msgs::JointStateConstPtr js = event.getConstMessage();
-	std::vector<std::string> joints = m_robot->getJointNames();
+	std::vector<std::string> joints = m_robot->getChainJointNames();
 
 	if (js->name.empty())
 		return;
@@ -884,6 +887,12 @@ bool PRMPlanner::plan(const Eigen::Affine3d& goalPose,
 
 void PRMPlanner::execute(const boost::shared_ptr<Path>& path)
 {
+	//nothing to execute, e.g., start and goal pose are similar
+	if (path.get() == NULL)
+	{
+		return;
+	}
+
 	//do nothing in inactive mode
 	if (!m_active)
 	{
@@ -1272,7 +1281,7 @@ void PRMPlanner::threadDebugCollisionChecks()
 	while (ros::ok() && !boost::this_thread::interruption_requested())
 	{
 		//update joint poses
-		KDL::JntArray currentJointPose = m_robot->getKDLJointState();
+		KDL::JntArray currentJointPose = m_robot->getKDLChainJointState();
 
 		fcl_robot_model::RobotState state;
 		m_debugCollisionDetectionInteractiveMarker->getJoints(state.m_joints);

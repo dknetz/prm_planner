@@ -33,6 +33,7 @@ void Sphere::initFCLModel()
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 
 	FCL_POINTER<fcl::Sphere> model(new fcl::Sphere(m_radius));
+	model->setUserData(&m_name);
 	m_fclCollisionObject.reset(new fcl::CollisionObject(model, m_tf));
 }
 

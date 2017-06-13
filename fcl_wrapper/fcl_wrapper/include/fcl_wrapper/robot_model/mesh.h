@@ -65,6 +65,7 @@ public:
 class Meshes: public Geometry
 {
 public:
+	Meshes(const std::string& name);
 	virtual void getFCLModel(const fcl::Transform3f& transform,
 			FCL_POINTER<fcl::CollisionObject>& fclCollisionModel);
 	std::vector<FCL_POINTER<Mesh>> m_meshes;

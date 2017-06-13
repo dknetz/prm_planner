@@ -10,20 +10,24 @@
 
 #include <fcl_wrapper/robot_model/geometry.h>
 
-namespace fcl_robot_model {
+namespace fcl_robot_model
+{
 
-class Sphere: public Geometry {
+class Sphere: public Geometry
+{
 public:
-	Sphere(double radius);
+	Sphere(const std::string& name,
+			double radius);
 	virtual ~Sphere();
 
 	virtual void getFCLModel(const fcl::Transform3f& transform,
 			FCL_POINTER<fcl::CollisionObject>& fclCollisionModel);
 
-private:
-	double m_radius;
-};
+		private:
+			double m_radius;
+		};
 
-} /* namespace fcl_robot_model */
+	}
+	/* namespace fcl_robot_model */
 
 #endif /* FCL_WRAPPER_FCL_WRAPPER_INCLUDE_FCL_WRAPPER_COLLISION_DETECTION_SPHERE_H_ */

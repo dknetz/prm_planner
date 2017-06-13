@@ -12,6 +12,7 @@
 #include <fcl_wrapper/collision_detection/octomap.h>
 #include <fcl_wrapper/collision_detection/box.h>
 #include <fcl_wrapper/collision_detection/sphere.h>
+#include <fcl_wrapper/robot_model/robot_state.h>
 #include <prm_planner/environment/planning_object.h>
 #include <prm_planner/environment/planning_scene.h>
 #include <prm_planner/objects/graspable_object.h>
@@ -48,7 +49,7 @@ CollisionDetector::CollisionDetector(boost::shared_ptr<Robot> robotInterface,
 		boost::shared_ptr<PlanningScene> planningScene,
 		std::vector<boost::shared_ptr<GraspableObject>> ignoreObjects)
 {
-	fcl.reset(new fcl_collision_detection::FCLWrapper);
+	fcl.reset(new fcl_collision_detection::FCLWrapper(ProblemDefinitionManager::getInstance()->getProblemDefinition()->getRootFrame()));
 
 	boost::shared_ptr<ProblemDefinition> pd = ProblemDefinitionManager::getInstance()->getProblemDefinition();
 
@@ -74,6 +75,7 @@ CollisionDetector::CollisionDetector(boost::shared_ptr<Robot> robotInterface,
 		}
 	}
 
+	fclArm->setRobotState(robotInterface->getAllJointStates());
 	fcl->addObject(fclArm);
 	robot = fclArm;
 

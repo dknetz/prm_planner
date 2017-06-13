@@ -9,18 +9,27 @@
 #include <fcl/shape/geometric_shapes.h>
 #include <fcl_wrapper/robot_model/sphere.h>
 
-namespace fcl_robot_model {
+namespace fcl_robot_model
+{
 
-Sphere::Sphere(double radius):m_radius(radius) {
+Sphere::Sphere(const std::string& name,
+		double radius) :
+				Geometry(name),
+				m_radius(radius)
+{
 }
 
-Sphere::~Sphere() {
+Sphere::~Sphere()
+{
 }
 
 void Sphere::getFCLModel(const fcl::Transform3f& transform,
-		FCL_POINTER<fcl::CollisionObject>& fclCollisionModel) {
-	FCL_POINTER<fcl::Sphere> model(new fcl::Sphere(m_radius));
-	fclCollisionModel.reset(new fcl::CollisionObject(model, transform));
-}
+		FCL_POINTER<fcl::CollisionObject>& fclCollisionModel)
+		{
+			FCL_POINTER<fcl::Sphere> model(new fcl::Sphere(m_radius));
+			model->setUserData(&c_name);
+			fclCollisionModel.reset(new fcl::CollisionObject(model, transform));
+		}
 
-} /* namespace fcl_robot_model */
+	}
+	/* namespace fcl_robot_model */

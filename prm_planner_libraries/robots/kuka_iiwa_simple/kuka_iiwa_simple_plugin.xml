@@ -1,7 +1,0 @@
-<library path="lib/libkuka_iiwa_simple">
-	<class type="kuka_iiwa_simple::IiwaSimpleInterface" base_class_type="prm_planner::RobotInterface">
-		<description>
-			iiwa simple interface
-		</description>
-	</class>
-</library>

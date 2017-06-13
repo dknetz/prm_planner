@@ -7,12 +7,16 @@
 
 #include <fcl_wrapper/robot_model/geometry.h>
 
-namespace fcl_robot_model {
+namespace fcl_robot_model
+{
 
-Geometry::Geometry() {
+Geometry::Geometry(const std::string& name) :
+				c_name(name)
+{
 }
 
-Geometry::~Geometry() {
+Geometry::~Geometry()
+{
 }
 
 } /* namespace fcl_robot_model */

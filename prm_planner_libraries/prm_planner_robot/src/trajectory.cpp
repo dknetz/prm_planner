@@ -12,6 +12,7 @@
 #include <eigen_conversions/eigen_kdl.h>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/frames.hpp>
+#include <prm_planner_robot/kinematics.h>
 #include <prm_planner_robot/path.h>
 #include <prm_planner_robot/trajectory.h>
 #include <iostream>
@@ -134,7 +135,7 @@ Trajectory::Pose::Pose(const KDL::Frame& pose)
 	quaternion = Eigen::Quaterniond(eigenPose.rotation());
 }
 
-Trajectory::Pose::Pose(const boost::shared_ptr<KDL::ChainFkSolverPos_recursive>& fk,
+Trajectory::Pose::Pose(const boost::shared_ptr<Kinematics>& fk,
 		const KDL::JntArray& joints)
 {
 	reset(fk, joints);
@@ -154,11 +155,11 @@ void Trajectory::Pose::reset(const Eigen::Affine3d& pose)
 	kdlFrame.M.GetRPY(x(3, 0), x(4, 0), x(5, 0));
 }
 
-void Trajectory::Pose::reset(const boost::shared_ptr<KDL::ChainFkSolverPos_recursive>& fk,
+void Trajectory::Pose::reset(const boost::shared_ptr<Kinematics>& fk,
 		const KDL::JntArray& joints)
 {
 	KDL::Frame pose;
-	fk->JntToCart(joints, pose);
+	fk->getFK(joints, pose);
 
 	x(0, 0) = pose.p.data[0];
 	x(1, 0) = pose.p.data[1];

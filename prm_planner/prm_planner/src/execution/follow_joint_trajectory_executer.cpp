@@ -135,7 +135,7 @@ void FollowJointTrajectoryExecuter::run()
 			m_newDataReceived = false;
 
 			//get current arm poses
-			KDL::JntArray jointPose = m_robot->getKDLJointState();
+			KDL::JntArray jointPose = m_robot->getKDLChainJointState();
 
 			//get some further information
 			m_mutex.lock();
@@ -271,7 +271,7 @@ void FollowJointTrajectoryExecuter::generateGoalMessage(ArmJointPath& path,
 	parameters::ControllerConfig controllerParams = ParameterServer::controllerConfigs[m_robot->getParameters().controllerConfig];
 
 	//create ROS message
-	goalMessage.trajectory.joint_names = m_robot->getJointNames();
+	goalMessage.trajectory.joint_names = m_robot->getChainJointNames();
 	trajectory_msgs::JointTrajectoryPoint jointState;
 
 	//old poses

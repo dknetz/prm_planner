@@ -61,7 +61,7 @@ RobotModel::RobotModel(const std::string& robotDescriptionParamName,
 	if (!collisionMatrixFile.empty())
 	{
 		fcl_collision_detection::CollisionMatrix::load(collisionMatrixFile, m_collisionMatrix);
-		m_collisionMatrix->setPrefix(name, { "environment" });
+//		m_collisionMatrix->setPrefix(name, { "environment" });
 	}
 
 	load();
@@ -98,21 +98,21 @@ void RobotModel::load()
 					FCL_POINTER<urdf::Box> box = FCL_POINTER_NAMESPACE::dynamic_pointer_cast<urdf::Box>(CONVERT_TO_BOOST_POINTER(it.second->collision->geometry));
 					collisionModel->meshFileName.clear();
 					collisionModel->scale = Eigen::Vector3d::Ones();
-					collisionModel->geometry.reset(new Box(box->dim.x, box->dim.y, box->dim.z));
+					collisionModel->geometry.reset(new Box(it.first, box->dim.x, box->dim.y, box->dim.z));
 				}
 				else if (it.second->collision->geometry->type == urdf::Geometry::CYLINDER)
 				{
 					FCL_POINTER<urdf::Cylinder> cylinder = FCL_POINTER_NAMESPACE::dynamic_pointer_cast<urdf::Cylinder>(CONVERT_TO_BOOST_POINTER(it.second->collision->geometry));
 					collisionModel->meshFileName.clear();
 					collisionModel->scale = Eigen::Vector3d::Ones();
-					collisionModel->geometry.reset(new Cylinder(cylinder->radius, cylinder->length));
+					collisionModel->geometry.reset(new Cylinder(it.first, cylinder->radius, cylinder->length));
 				}
 				else if (it.second->collision->geometry->type == urdf::Geometry::SPHERE)
 				{
 					FCL_POINTER<urdf::Sphere> sphere = FCL_POINTER_NAMESPACE::dynamic_pointer_cast<urdf::Sphere>(CONVERT_TO_BOOST_POINTER(it.second->collision->geometry));
 					collisionModel->meshFileName.clear();
 					collisionModel->scale = Eigen::Vector3d::Ones();
-					collisionModel->geometry.reset(new Sphere(sphere->radius));
+					collisionModel->geometry.reset(new Sphere(it.first, sphere->radius));
 				}
 				else
 				{
@@ -192,6 +192,25 @@ void RobotModel::load()
 		toEigenTransform(it.second->parent_to_joint_origin_transform, transformation);
 		Eigen::Vector3d axis(it.second->axis.x, it.second->axis.y, it.second->axis.z);
 
+		RobotJoint::Type type;
+		switch (it.second->type)
+		{
+			case urdf::Joint::REVOLUTE:
+				case urdf::Joint::CONTINUOUS:
+				type = RobotJoint::Revolute;
+				break;
+			case urdf::Joint::PRISMATIC:
+				type = RobotJoint::Prismatic;
+				break;
+			case urdf::Joint::FIXED:
+				type = RobotJoint::Fixed;
+				break;
+			default:
+				LOG_FATAL("Unknown joint type: " << type)
+				;
+				exit(123);
+		}
+
 		double low = 0, up = 0, speed = 0;
 		if (it.second->limits.get() != NULL)
 		{
@@ -200,7 +219,7 @@ void RobotModel::load()
 			speed = it.second->limits->velocity;
 		}
 
-		m_joints[it.first].reset(new RobotJoint(it.first, axis, low, up, speed, transformation));
+		m_joints[it.first].reset(new RobotJoint(it.first, axis, type, low, up, speed, transformation));
 
 		if (CHECK_MAP(m_links, it.second->parent_link_name))
 		{
@@ -382,7 +401,7 @@ void RobotModel::setRobotState(const RobotState& state)
 	{
 		std::string nameWithoutPrefix = it.first;
 		boost::replace_first(nameWithoutPrefix, search, "");
-		m_joints[nameWithoutPrefix]->setAngle(it.second);
+		m_joints[nameWithoutPrefix]->setJointValue(it.second);
 	}
 
 	if (m_root != NULL)
@@ -402,7 +421,7 @@ void RobotModel::getRobotState(RobotState& state)
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 	for (auto& it : m_joints)
 	{
-		state.setJoint(m_name + "/" + it.first, it.second->getAngle());
+		state.setJoint(m_name + "/" + it.first, it.second->getJointValue());
 	}
 }
 

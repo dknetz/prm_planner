@@ -1,0 +1,7 @@
+<library path="lib/libprm_kinematics_pr2">
+	<class type="prm_kinematics_pr2::PR2Kinematics" base_class_type="prm_planner::Kinematics">
+		<description>
+			PRM Planner kinematics for PR2 robot 
+		</description>
+	</class>
+</library>

@@ -1,0 +1,39 @@
+<launch>
+	<!-- Given the published joint states, publish tf for the robot links -->
+	<group ns="pr2">
+<!-- 		<param name="robot_description" command="$(find xacro)/xacro inorder '$(find pr2_description)/robots/pr2.urdf.xacro'" /> -->
+		<param name="robot_description" textfile="$(find prm_planner_example_configs)/config/pr2.urdf" />
+
+		<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
+			<param name="tf_prefix" type="string" value="pr2" />
+		</node>
+
+<!-- 		<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"> -->
+<!-- 		<param name="use_gui" type="bool" value="true" />  -->
+<!-- 		</node> -->
+		<node name="joint_state_publisher" pkg="extended_joint_state_publisher" type="joint_state_publisher">
+			<param name="use_gui" type="bool" value="true" />
+			<rosparam param="joints_to_publish">["base_bellow_joint", "base_footprint_joint", "base_laser_joint", "bl_caster_l_wheel_joint", "bl_caster_r_wheel_joint", "bl_caster_rotation_joint", "br_caster_l_wheel_joint", "br_caster_r_wheel_joint", "br_caster_rotation_joint","double_stereo_frame_joint", "fl_caster_l_wheel_joint", "fl_caster_r_wheel_joint", "fl_caster_rotation_joint", "fr_caster_l_wheel_joint","fr_caster_r_wheel_joint", "fr_caster_rotation_joint", "head_pan_joint", "head_plate_frame_joint", "head_tilt_joint", "high_def_frame_joint","high_def_optical_frame_joint", "imu_joint", "l_elbow_flex_joint", "l_forearm_cam_frame_joint", "l_forearm_cam_optical_frame_joint","l_forearm_joint", "l_forearm_roll_joint", "l_gripper_joint", "l_gripper_l_finger_joint", "l_gripper_l_finger_tip_joint","l_gripper_led_joint", "l_gripper_motor_accelerometer_joint", "l_gripper_motor_screw_joint", "l_gripper_motor_slider_joint","l_gripper_palm_joint", "l_gripper_r_finger_joint", "l_gripper_r_finger_tip_joint", "l_gripper_tool_joint", "l_shoulder_lift_joint","l_shoulder_pan_joint", "l_torso_lift_side_plate_joint", "l_upper_arm_joint", "l_upper_arm_roll_joint", "l_wrist_flex_joint","l_wrist_roll_joint", "laser_tilt_joint", "laser_tilt_mount_joint", "narrow_stereo_frame_joint","narrow_stereo_l_stereo_camera_frame_joint", "narrow_stereo_l_stereo_camera_optical_frame_joint","narrow_stereo_optical_frame_joint", "narrow_stereo_r_stereo_camera_frame_joint", "narrow_stereo_r_stereo_camera_optical_frame_joint","projector_wg6802418_child_frame_joint", "projector_wg6802418_frame_joint", "r_forearm_cam_frame_joint","r_forearm_cam_optical_frame_joint", "r_forearm_joint", "r_gripper_joint", "r_gripper_l_finger_joint","r_gripper_l_finger_tip_joint", "r_gripper_led_joint", "r_gripper_motor_accelerometer_joint", "r_gripper_motor_screw_joint","r_gripper_motor_slider_joint", "r_gripper_palm_joint", "r_gripper_r_finger_joint", "r_gripper_r_finger_tip_joint","r_gripper_tool_joint", "r_torso_lift_side_plate_joint","r_upper_arm_joint" , "sensor_mount_frame_joint","torso_lift_joint", "torso_lift_motor_screw_joint", "wide_stereo_frame_joint", "wide_stereo_l_stereo_camera_frame_joint", "wide_stereo_l_stereo_camera_optical_frame_joint","wide_stereo_optical_frame_joint", "wide_stereo_r_stereo_camera_frame_joint", "wide_stereo_r_stereo_camera_optical_frame_joint"]</rosparam>
+		</node>
+
+		<param name="collision_matrix" type="string" value="$(find prm_planner_example_configs)/config/pr2.cm" />
+	</group>
+
+	<node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find prm_planner_simple_pr2)/rviz/example.rviz" />
+
+	<!-- Adapt the namespace to load the needed parameters. By changing it you can also start multiple planners with different configurations -->
+	<group ns="/prm_planner">
+		<rosparam command="load" file="$(find prm_planner_simple_pr2)/config/params.yaml" />
+		<rosparam command="load" ns="problem_definitions" file="$(find prm_planner_example_configs)/config/problems.yaml" />
+		<rosparam command="load" ns="robots" file="$(find prm_planner_example_configs)/config/robot_pr2.yaml" />
+
+		<!-- Setting paramters for fake execution -->
+		<param name="robot_fake_interface/joint_topic" type="string" value="/pr2/joint_states" />
+		<rosparam param="robot_fake_interface/start_joint_names">["r_shoulder_pan_joint", "r_shoulder_lift_joint", "r_upper_arm_roll_joint", "r_elbow_flex_joint", "r_forearm_roll_joint", "r_wrist_flex_joint", "r_wrist_roll_joint"]</rosparam>
+		<rosparam param="robot_fake_interface/start_joint_values">[0, 0.4, -0.1, -0.7, 0, -0.1, 0]</rosparam>
+
+		<node name="prm_planner" pkg="prm_planner" type="prm_planner" output="screen" />
+	</group>
+
+	<node name="planning_scene_publisher" pkg="prm_planner_simple_pr2" type="create_boxes_simple_pr2" />
+</launch>

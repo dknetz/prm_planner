@@ -41,7 +41,7 @@ bool FeasibilityChecker::check(const Eigen::Affine3d& pose,
 	{
 		//get random joint state
 		KDL::JntArray randomJointState;
-		m_robot->sampleValidJointState(randomJointState);
+		m_robot->sampleValidChainJointState(randomJointState);
 
 		//check ik and collisions
 		if (m_robot->getIKWithInit(randomJointState, pose, joints))
@@ -53,7 +53,7 @@ bool FeasibilityChecker::check(const Eigen::Affine3d& pose,
 				{
 					int i = 0;
 					fcl_robot_model::RobotState state;
-					for (auto& it : m_robot->getJointNames())
+					for (auto& it : m_robot->getChainJointNames())
 					{
 						state[it] = joints(i++);
 					}

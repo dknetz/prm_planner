@@ -14,7 +14,7 @@ namespace prm_planner
 
 Controller::Controller(boost::shared_ptr<RobotArm> arm) :
 				m_robotArm(arm),
-				m_jointNames(arm->getJointNames())
+				m_jointNames(arm->getChainJointNames())
 {
 	for (auto& it : m_jointNames)
 	{

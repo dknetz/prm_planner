@@ -21,12 +21,13 @@
 #include <prm_planner/visualization/robot_trajectory_visualizer.h>
 #include <prm_planner/visualization/robot_arm_interactive_marker.h>
 #include <prm_planner/util/parameter_server.h>
+#include <prm_planner/visualization/robot_pose_visualizer.h>
 #include <fstream>
 
 namespace prm_planner
 {
 
-RobotArmInteractiveMarker::RobotArmInteractiveMarker(boost::shared_ptr<RobotArm> robot,
+RobotArmInteractiveMarker::RobotArmInteractiveMarker(boost::shared_ptr<Robot> robot,
 		boost::shared_ptr<PRMPlanner> planner,
 		boost::shared_ptr<Constraint> constraint,
 		const std::string& name) :
@@ -39,33 +40,38 @@ RobotArmInteractiveMarker::RobotArmInteractiveMarker(boost::shared_ptr<RobotArm>
 				m_firstValid(false),
 				c_name(name)
 {
-	std::vector<urdf::JointLimits> limits;
-	m_robot->getChainJointLimits(limits);
+	std::vector<urdf::Joint> joints;
+	m_robot->getChainJoints(joints);
 
-	KDL::JntArray upper(limits.size()), lower(limits.size());
-	for (size_t i = 0; i < limits.size(); ++i)
+	KDL::JntArray upper(joints.size()), lower(joints.size());
+	for (size_t i = 0; i < joints.size(); ++i)
 	{
-		upper(i, 0) = limits[i].upper;
-		lower(i, 0) = limits[i].lower;
+		if (joints[i].type == urdf::Joint::CONTINUOUS)
+		{
+			upper(i, 0) = std::numeric_limits<double>::max();
+			lower(i, 0) = std::numeric_limits<double>::lowest();
+		}
+		else
+		{
+			upper(i, 0) = joints[i].limits->upper - 0.05;
+			lower(i, 0) = joints[i].limits->lower + 0.05;
+		}
 	}
 
 	m_ik = new KDL::ChainIkSolverPos_NR_JL(m_robot->getChain(), lower, upper, m_fk, m_ikVel, 100, 1e-2);
 
 	initMarkerServer();
 
-//	//initialize the robot model on the parameter server and setup the
-//	//robot state publisher to use the adapted names
-//	ArmTrajectoryVisualizer::initRobotModel(m_robot->getRobotDescription(), m_robot->getRobotDescription() + "_" + name,
-//			"interactive_marker_" + name, m_robot, m_statePublisher, m_nodeHandle);
-//
+	//visualize the ik solutions
+//	m_poseVisualizer = new RobotPoseVisualizer(m_robot, "ik");
 //	if (ParameterServer::visualize)
-//		m_timer = m_nodeHandle.createTimer(ros::Duration(1.0 / 30.0), &RobotArmInteractiveMarker::update, this);
+//		m_poseVisualizer->start();
 }
 
 RobotArmInteractiveMarker::~RobotArmInteractiveMarker()
 {
 	DELETE_VAR(m_server);
-//	DELETE_VAR(m_statePublisher);
+//	DELETE_VAR(m_poseVisualizer);
 	DELETE_VAR(m_ik);
 }
 
@@ -103,7 +109,7 @@ void RobotArmInteractiveMarker::processFeedback(const visualization_msgs::Intera
 				Eigen::Affine3d pose;
 				geometry_msgs::Pose tfPose;
 
-				m_robot->sampleValidEEFPose(pose, m_joints, 0.1);
+				m_robot->sampleValidChainEEFPose(pose, m_joints, 0.1);
 				tf::poseEigenToMsg(pose, tfPose);
 				m_server->setPose(m_interactiveMarker.name, tfPose);
 				m_menuHandler.reApply(*m_server);
@@ -135,6 +141,9 @@ void RobotArmInteractiveMarker::processFeedback(const visualization_msgs::Intera
 				Eigen::Affine3d pose;
 				tf::poseMsgToEigen(feedback->pose, pose);
 
+				Eigen::Affine3d t = m_planner->getTransformation(feedback->header.frame_id, m_interactiveMarker.header.frame_id);
+				pose = t * pose;
+
 				LOG_INFO("Pose: \n" << pose.matrix());
 			}
 			break;
@@ -158,10 +167,13 @@ void RobotArmInteractiveMarker::processFeedback(const visualization_msgs::Intera
 
 			KDL::JntArray solution;
 			bool valid = m_constraint->isValidPose(pose);
+
 			if (valid)
 			{
-				if (m_ik->CartToJnt(m_joints, x, solution) < 0)
+				if (!m_robot->getIKWithInit(m_joints, pose, solution))
+				//				if (m_ik->CartToJnt(m_joints, x, solution) < 0)
 				{
+//					LOG_INFO("No solution found");
 					m_server->setPose(m_interactiveMarker.name, m_oldPose);
 					m_menuHandler.reApply(*m_server);
 					m_server->applyChanges();
@@ -182,6 +194,9 @@ void RobotArmInteractiveMarker::processFeedback(const visualization_msgs::Intera
 					m_firstValid = true;
 					m_oldPose = p;
 					m_joints = solution;
+
+//					if (ParameterServer::visualize)
+//						m_poseVisualizer->setPose(m_joints);
 				}
 			}
 			else if (!valid && m_firstValid)
@@ -203,7 +218,7 @@ void RobotArmInteractiveMarker::initMarkerServer()
 	m_robot->getCurrentFK(eef);
 //	m_constraint->findValidPose(eef);
 
-	m_joints = m_robot->getKDLJointState();
+	m_joints = m_robot->getKDLChainJointState();
 
 	// create an interactive marker for our server
 	m_interactiveMarker.header.frame_id = m_robot->getRootFrame();
@@ -300,7 +315,7 @@ void RobotArmInteractiveMarker::update(const ros::TimerEvent& e)
 void RobotArmInteractiveMarker::getJoints(std::unordered_map<std::string, double>& joints)
 {
 	int i = 0;
-	for (auto& it : m_robot->getJointNames())
+	for (auto& it : m_robot->getChainJointNames())
 	{
 		joints[it] = m_joints.data(i++, 0);
 	}

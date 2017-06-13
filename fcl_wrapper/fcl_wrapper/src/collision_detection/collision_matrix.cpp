@@ -91,32 +91,38 @@ void CollisionMatrix::addOtherCollisionMatrix(const CollisionMatrix::Ptr& collis
 	m_collisionMatrix.insert(collisionMatrix->m_collisionMatrix.begin(), collisionMatrix->m_collisionMatrix.end());
 }
 
-void CollisionMatrix::setPrefix(const std::string& prefix,
-		const std::list<std::string>& exclude)
-{
-	CM newCM;
-	std::string first, second;
+//void CollisionMatrix::setPrefix(const std::string& prefix,
+//		const std::list<std::string>& exclude)
+//{
+//	CM newCM;
+//	std::string first, second;
+//
+//	for (auto& it : m_collisionMatrix)
+//	{
+//		first = it.first;
+//		second = it.second;
+//
+//		if (std::find(exclude.begin(), exclude.end(), first) == exclude.end())
+//			first = prefix + "/" + first;
+//
+//		if (std::find(exclude.begin(), exclude.end(), second) == exclude.end())
+//			second = prefix + "/" + second;
+//
+//		newCM.insert(std::make_pair(first, second));
+//	}
+//
+//	m_prefix = prefix;
+//	m_collisionMatrix = newCM;
+//}
 
-	for (auto& it : m_collisionMatrix)
-	{
-		first = it.first;
-		second = it.second;
-
-		if (std::find(exclude.begin(), exclude.end(), first) == exclude.end())
-			first = prefix + "/" + first;
-
-		if (std::find(exclude.begin(), exclude.end(), second) == exclude.end())
-			second = prefix + "/" + second;
-
-		newCM.insert(std::make_pair(first, second));
-	}
-
-	m_collisionMatrix = newCM;
-}
-
-bool CollisionMatrix::collide(const std::string& link1,
+bool CollisionMatrix::canCollide(const std::string& link1,
 		const std::string& link2)
 {
+//	std::string l1 = m_prefix.empty() ? link1 : (m_prefix + "/" + link1);
+//	std::string l2 = m_prefix.empty() ? link2 : (m_prefix + "/" + link2);
+
+//	LOG_INFO("Collision check between " << link1 << " " << link2);
+
 	auto range = m_collisionMatrix.equal_range(link1);
 
 	if (CHECK_MAP(m_checkAllways, link1) || CHECK_MAP(m_checkAllways, link2))

@@ -74,6 +74,7 @@ add_library(prm_planner_robot
     src/path.cpp
     src/gripper_interface.cpp
     src/robot_interface.cpp
+    src/kinematics.cpp
 )
 
 set(LIBRARIES

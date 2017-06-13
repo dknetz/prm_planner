@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-	<name>kuka_iiwa_simple</name>
+	<name>prm_kinematics_kdl</name>
 	<version>1.0.0</version>
-	<description>The kuka_iiwa_simple package</description>
+	<description>The prm_kinematics_kdl package</description>
 
 	<!-- One maintainer tag required, multiple allowed, one person per tag -->
 	<!-- Example: -->
@@ -48,6 +48,6 @@
 
 	<!-- The export tag contains other, unspecified, tags -->
 	<export>
-		<prm_planner plugin="${prefix}/kuka_iiwa_simple_plugin.xml" />
+		<prm_planner plugin="${prefix}/prm_kinematics_kdl_plugin.xml" />
 	</export>
 </package>

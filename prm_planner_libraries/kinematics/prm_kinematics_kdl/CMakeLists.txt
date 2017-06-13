@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(kuka_iiwa_simple)
+project(prm_kinematics_kdl)
 
-set(CMAKE_BUILD_TYPE RelWithDebInfo) #RelWithDebInfo
+set(CMAKE_BUILD_TYPE Release) #RelWithDebInfo
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
+find_package(orocos_kdl REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -25,9 +26,9 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES kuka_iiwa_simple
+    LIBRARIES prm_kinematics_kdl
     CATKIN_DEPENDS prm_planner roscpp
-    DEPENDS Boost
+    DEPENDS Boost orocos_kdl
 )
 
 ###########
@@ -44,28 +45,32 @@ ADD_DEFINITIONS(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${orocos_kdl_INCLUDE_DIRS}
   include
 )
 
 ## Declare a C++ library
-add_library(kuka_iiwa_simple
-   src/iiwa_simple_interface.cpp
+add_library(prm_kinematics_kdl
+   src/kdl_kinematics.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(kuka_iiwa_vrep ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(prm_kinematics_kdl ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(kuka_iiwa_vrep_node src/kuka_robot_executers_node.cpp)
+# add_executable(prm_kinematics_kdl_node src/kuka_robot_executers_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(kuka_iiwa_vrep_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(prm_kinematics_kdl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(kuka_iiwa_simple
-   ${catkin_LIBRARIES}
+target_link_libraries(prm_kinematics_kdl
+   ${catkin_LIBRARIES} 
+   ${Boost_LIBRARIES} 
+   ${orocos_kdl_LIBRARIES} 
 )
 

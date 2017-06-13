@@ -37,6 +37,7 @@ void Box::initFCLModel()
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 
 	FCL_POINTER<fcl::Box> model(new fcl::Box(m_sizeX, m_sizeY, m_sizeZ));
+	model->setUserData(&m_name);
 	m_fclCollisionObject.reset(new fcl::CollisionObject(model, m_tf));
 }
 

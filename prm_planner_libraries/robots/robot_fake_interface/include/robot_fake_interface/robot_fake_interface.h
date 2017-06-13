@@ -11,15 +11,16 @@
 #define H20A551E2_AB04_46AA_8DD3_4590AD2as5gs
 
 #include <prm_planner_robot/robot_interface.h>
+#include <sensor_msgs/JointState.h>
 
-namespace kuka_iiwa_simple
+namespace robot_fake_interface
 {
 
-class IiwaSimpleInterface: public prm_planner::RobotInterface
+class RobotFakeInterface: public prm_planner::RobotInterface
 {
 public:
-	IiwaSimpleInterface();
-	virtual ~IiwaSimpleInterface();
+	RobotFakeInterface();
+	virtual ~RobotFakeInterface();
 
 	virtual bool start();
 	virtual bool read(const ros::Time time = ros::Time(0),
@@ -29,9 +30,14 @@ public:
 	virtual bool stop();
 
 private:
+	virtual void receiveJointState(const sensor_msgs::JointStateConstPtr& jointState);
+
+private:
+	std::vector<std::string> m_chainNames;
 	ros::Publisher m_jointPub;
+	ros::Subscriber m_jointSub;
 };
 
-} /* namespace kuka_iiwa_simple */
+} /* namespace robot_fake_interface */
 
 #endif /* H20A551E2_AB04_46AA_8DD3_4590AD2as5gs */

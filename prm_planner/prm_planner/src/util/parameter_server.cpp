@@ -180,6 +180,7 @@ bool ParameterServer::loadRobotParameters()
 	std::string handName, handJointStateTopic, handTopic, handInterface, handClass;
 	double handGraspPreDistance, handGraspRadius, handDropPreDistance, handGraspPostHeight;
 	std::string followJointTrajectoryTopic, jointStateTopic, interfacePackage, interfaceClass;
+	std::string kinematicsPackage, kinematicsClass;
 	double graspingMinHeight;
 	bool useToolFrame, useHWInterface;
 
@@ -212,6 +213,9 @@ bool ParameterServer::loadRobotParameters()
 			GET_PARAMETER_DEFAULT("/" + it2 + "/collision_matrix", collisionMatrix, "");
 			GET_PARAMETER_DEFAULT("robots/" + it + "/arms/" + it2 + "/tool_frame", useToolFrame, false);
 			GET_PARAMETER_DEFAULT("robots/" + it + "/arms/" + it2 + "/tf_prefix", tfPrefix, "");
+
+			GET_PARAMETER_DEFAULT("robots/" + it + "/arms/" + it2 + "/kinematics_package", kinematicsPackage, "prm_kinematics_kdl");
+			GET_PARAMETER_DEFAULT("robots/" + it + "/arms/" + it2 + "/kinematics_class", kinematicsClass, "prm_kinematics_kdl::KDLKinematics");
 
 			//follow joint trajectory action client
 			if (executionMode == parameters::FollowJointTrajectoryPublisher)
@@ -268,13 +272,15 @@ bool ParameterServer::loadRobotParameters()
 			armBase.useToolFrame = useToolFrame;
 			armBase.robotDescriptionParam = description;
 			armBase.tfPrefix = tfPrefix;
-			armBase.executionInterface = (ArmExecutionMode)executionMode;
+			armBase.executionInterface = (ArmExecutionMode) executionMode;
 			armBase.collisionMatrixFile = collisionMatrix;
 			armBase.controllerConfig = controllerConfig;
 			armBase.followJointTrajectoryTopic = followJointTrajectoryTopic;
 			armBase.jointStateTopic = jointStateTopic;
 			armBase.interfacePackage = interfacePackage;
 			armBase.interfaceClass = interfaceClass;
+			armBase.kinematicsPackage = kinematicsPackage;
+			armBase.kinematicsClass = kinematicsClass;
 
 			arm.singleArmPlanningFrame = singleArmPlanningFrame;
 			arm.singleArmConstraint = singleArmConstraint;

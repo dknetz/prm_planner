@@ -12,10 +12,6 @@
 #include <actionlib/client/simple_action_client.h>
 #include <prm_planner_robot/defines.h>
 #include <boost/thread/recursive_mutex.hpp>
-#include <kdl/chainfksolverpos_recursive.hpp>
-#include <kdl/chainiksolverpos_nr_jl.hpp>
-#include <kdl/chainiksolvervel_pinv.hpp>
-#include <kdl/chainjnttojacsolver.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/tree.hpp>
 #include <prm_planner_robot/robot_interface.h>
@@ -25,6 +21,7 @@
 #include <Eigen/Geometry>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <prm_planner_robot/gripper_interface.h>
+#include <prm_planner_robot/kinematics.h>
 
 namespace prm_planner
 {
@@ -47,15 +44,20 @@ public:
 	 */
 	void initHardwareInterface();
 
-	boost::shared_ptr<urdf::JointLimits> getJointLimits(const std::string& name);
-	void getChainJointLimits(std::vector<urdf::JointLimits>& out);
+	/**
+	 * Returns the joint state of the chain as a KDL JntArray
+	 */
+	KDL::JntArray getKDLChainJointState() const;
 
-	//not realtime
-	sensor_msgs::JointState getROSJointPose() const;
+	/**
+	 * Returns the joint velocity of the chain as a KDL JntArray
+	 */
+	KDL::JntArray getKDLChainVelocities() const;
 
-	//only call these methods from controller, no locks!
-	KDL::JntArray getKDLJointState() const;
-	KDL::JntArray getKDLVelocities() const;
+	/**
+	 * Returns all joint states
+	 */
+	std::unordered_map<std::string, double> getAllJointStates() const;
 
 	/**
 	 * Receives the robot data from the hardware interface.
@@ -100,7 +102,7 @@ public:
 	 * joint trajectory' interface call sendTrajectory()
 	 * instead.
 	 */
-	void sendJointPosition(const KDL::JntArray& joints);
+	void sendChainJointPosition(const KDL::JntArray& joints);
 
 	/**
 	 * Use this method if you use the 'follow joint trajectory'
@@ -145,20 +147,49 @@ public:
 	 *
 	 * @joints: the joint state
 	 */
-	void setJointState(const KDL::JntArray& joints);
+	void setChainJointState(const KDL::JntArray& joints);
 
 	/**
-	 * Returns a new instance of an forward kinematic solver
-	 * based on the robots chain.
+	 * Returns the chain
 	 */
-	boost::shared_ptr<KDL::ChainFkSolverPos_recursive> getNewFkSolverInstance() const;
-//	const boost::shared_ptr<KDL::ChainIkSolverPos> getIkSolver() const;
-//	const boost::shared_ptr<KDL::ChainJntToJacSolver> getJacobianSolver() const;
+	const KDL::Chain& getChain() const;
 
-	void sampleValidEEFPose(Eigen::Affine3d& pose,
+	/**
+	 * Returns the joint limits of a given joint
+	 */
+	boost::shared_ptr<urdf::JointLimits> getJointLimits(const std::string& name);
+
+	/**
+	 * Returns all joints of the chain
+	 */
+	void getChainJoints(std::vector<urdf::Joint>& out);
+
+	/**
+	 * Returns a vector of joint names belonging to the current chain
+	 */
+	const std::vector<std::string>& getChainJointNames() const;
+
+	/**
+	 * Returns the upper joint limits of the joints of the current chain
+	 */
+	const KDL::JntArray& getChainLimitMax() const;
+
+	/**
+	 * Returns the lower joint limits of the joints of the current chain
+	 */
+	const KDL::JntArray& getChainLimitMin() const;
+
+	/**
+	 * Samples a end effector pose for the chain
+	 */
+	void sampleValidChainEEFPose(Eigen::Affine3d& pose,
 			KDL::JntArray& joints,
 			const double borderAvoidance = 0.05);
-	void sampleValidJointState(KDL::JntArray& jointState,
+
+	/**
+	 * Samples a joint state for the chain
+	 */
+	void sampleValidChainJointState(KDL::JntArray& jointState,
 			const double borderAvoidance = 0.05);
 
 	bool getIK(const Eigen::Affine3d& pose,
@@ -171,13 +202,8 @@ public:
 	bool getFK(const KDL::JntArray& joints,
 			Eigen::Affine3d& pose);
 	bool getCurrentFK(Eigen::Affine3d& pose);
-	const KDL::Chain& getChain() const;
-	const std::vector<std::string>& getJointNames() const;
-	const KDL::Tree& getRobot() const;
 
-	void getNewFKandIK(KDL::ChainIkSolverVel_pinv*& ikVel,
-			KDL::ChainFkSolverPos_recursive*& fk,
-			KDL::ChainIkSolverPos_NR_JL*& ik);
+	const KDL::Tree& getRobot() const;
 
 	const std::string& getRobotDescription() const;
 	const std::string& getRootLink() const;
@@ -196,9 +222,11 @@ public:
 	Eigen::Affine3d getTcp() const;
 	bool isUseTcp() const;
 
+	const urdf::Model& getUrdf() const;
+	const boost::shared_ptr<Kinematics>& getKinematics() const;
+
 protected:
 	mutable boost::recursive_mutex m_mutex;
-	mutable boost::recursive_mutex m_kdlMutex;
 
 	//hardware interfaces
 	boost::shared_ptr<prm_planner::RobotInterface> m_interface;
@@ -222,17 +250,15 @@ protected:
 	KDL::Tree m_robot;
 	KDL::Chain m_chain;
 	urdf::Model m_urdf;
-	boost::shared_ptr<KDL::ChainFkSolverPos_recursive> m_fkSolver;
-	boost::shared_ptr<KDL::ChainIkSolverPos> m_ikSolver;
-	boost::shared_ptr<KDL::ChainIkSolverVel> m_ikVelSolver;
-	boost::shared_ptr<KDL::ChainJntToJacSolver> m_jacobianSolver;
-	KDL::JntArray m_limitMin, m_limitMax;
+	boost::shared_ptr<Kinematics> m_kinematics;
 
-	KDL::JntArray m_positions;
-	sensor_msgs::JointState m_rosJointState;
-	KDL::JntArray m_velocities;
-	KDL::JntArray m_commands;
-	std::vector<std::string> m_jointNames;
+	KDL::JntArray m_chainLimitMin, m_chainLimitMax;
+	KDL::JntArray m_chainPositions;
+	KDL::JntArray m_chainVelocities;
+	KDL::JntArray m_chainCommands;
+	std::vector<std::string> m_chainJointNames;
+
+	std::unordered_map<std::string, double> m_allPositions;
 
 	boost::shared_ptr<GripperInterface> m_gripper;
 

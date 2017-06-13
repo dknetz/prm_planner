@@ -115,7 +115,7 @@ void RobotTrajectoryVisualizer::update()
 	//use trajectory
 	if (!m_trajectory.empty() && m_counter < m_trajectory.size())
 	{
-		for (auto& it : m_robot->getJointNames())
+		for (auto& it : m_robot->getChainJointNames())
 		{
 			joints[it] = m_trajectory[m_counter].positions.data(i++, 0);
 		}
@@ -125,8 +125,8 @@ void RobotTrajectoryVisualizer::update()
 	//use current state
 	else
 	{
-		KDL::JntArray current = m_robot->getKDLJointState();
-		for (auto& it : m_robot->getJointNames())
+		KDL::JntArray current = m_robot->getKDLChainJointState();
+		for (auto& it : m_robot->getChainJointNames())
 		{
 			joints[it] = current.data(i++, 0);
 		}

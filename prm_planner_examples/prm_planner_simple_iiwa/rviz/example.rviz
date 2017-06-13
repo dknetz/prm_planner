@@ -364,6 +364,14 @@ Visualization Manager:
         path: true
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /prm_planner/fcl_aabb
+      Name: "FCL: AABB"
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

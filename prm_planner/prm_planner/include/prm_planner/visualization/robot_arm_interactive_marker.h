@@ -10,6 +10,7 @@
 #ifndef INTERACTIVE_MARKER_H_
 #define INTERACTIVE_MARKER_H_
 
+#include <ais_definitions/class.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 #include <kdl/chainiksolvervel_pinv.hpp>
@@ -24,10 +25,10 @@
 namespace prm_planner
 {
 
-class RobotArm;
-class RobotStatePublisher;
-class PRMPlanner;
-class Constraint;
+FORWARD_DECLARE(Robot);
+FORWARD_DECLARE(PRMPlanner);
+FORWARD_DECLARE(Constraint);
+FORWARD_DECLARE(RobotPoseVisualizer);
 
 class RobotArmInteractiveMarker: public InteractiveMarker
 {
@@ -50,7 +51,7 @@ public:
 	 * 		Furthermore the interactive marker will be published on the topic
 	 * 		{private_namespace}/{name}.
 	 */
-	RobotArmInteractiveMarker(boost::shared_ptr<RobotArm> robot,
+	RobotArmInteractiveMarker(boost::shared_ptr<Robot> robot,
 			boost::shared_ptr<PRMPlanner> planner,
 			boost::shared_ptr<Constraint> constraint,
 			const std::string& name);
@@ -69,13 +70,13 @@ private:
 	ros::Timer m_timer;
 	tf::TransformBroadcaster m_transformBroadcaster;
 
-	boost::shared_ptr<RobotArm> m_robot;
+	boost::shared_ptr<Robot> m_robot;
 	geometry_msgs::Pose m_oldPose;
 	KDL::ChainIkSolverVel_pinv m_ikVel;
 	KDL::ChainFkSolverPos_recursive m_fk;
 	KDL::ChainIkSolverPos_NR_JL* m_ik;
 	KDL::JntArray m_joints;
-	prm_planner::RobotStatePublisher* m_statePublisher;
+	RobotPoseVisualizer* m_poseVisualizer;
 
 	interactive_markers::InteractiveMarkerServer* m_server;
 	interactive_markers::MenuHandler m_menuHandler;

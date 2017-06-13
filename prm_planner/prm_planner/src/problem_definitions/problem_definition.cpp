@@ -275,7 +275,14 @@ bool ProblemDefinition::planDefault(const KDL::JntArray& startJoint,
 	if (startJoint.rows() == 0)
 	{
 		currentTaskPose = getCurrentTaskPose();
-		currentJointPose = m_robot->getKDLJointState();
+		currentJointPose = m_robot->getKDLChainJointState();
+	}
+
+	//goal already reached
+	if (currentTaskPose.isApprox(goal, 1e-5))
+	{
+		LOG_INFO("Start and goal pose are the same");
+		return true;
 	}
 
 	m_mutex.lock_shared();
@@ -344,7 +351,7 @@ bool ProblemDefinition::planGrasping(const std::string& object,
 
 	//get robot state
 	const Eigen::Affine3d currentTaskPose = getCurrentTaskPose();
-	KDL::JntArray currentPose = m_robot->getKDLJointState();
+	KDL::JntArray currentPose = m_robot->getKDLChainJointState();
 
 	//setup threads
 	boost::atomic_bool found(false);
@@ -475,7 +482,7 @@ bool ProblemDefinition::planDropping(const std::string& objectName,
 
 	//get robot state
 	Eigen::Affine3d currentTaskPose = getCurrentTaskPose();
-	KDL::JntArray currentPose = m_robot->getKDLJointState();
+	KDL::JntArray currentPose = m_robot->getKDLChainJointState();
 
 	Eigen::Vector3d goalPos = goal.translation();
 
@@ -730,15 +737,11 @@ bool ProblemDefinition::findDropPosition(const boost::shared_ptr<GraspableObject
 
 Eigen::Affine3d ProblemDefinition::samplePose()
 {
-	boost::shared_ptr<KDL::ChainFkSolverPos> fk = m_robot->getNewFkSolverInstance();
 	KDL::JntArray q;
-	m_robot->sampleValidJointState(q);
-
-	KDL::Frame x;
-	fk->JntToCart(q, x);
+	m_robot->sampleValidChainJointState(q);
 
 	Eigen::Affine3d pose;
-	tf::transformKDLToEigen(x, pose);
+	m_robot->getFK(q, pose);
 
 	Eigen::Affine3d t;
 	if (!ais_ros::RosBaseInterface::getRosTransformationWithResult(m_robot->getRootFrame(), c_config.planningFrame, t))

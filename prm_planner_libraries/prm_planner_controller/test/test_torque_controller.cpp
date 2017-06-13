@@ -20,6 +20,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 #include <eigen_conversions/eigen_kdl.h>
+#include <kdl/chainiksolvervel_pinv.hpp>
 #include <vrep_interface/v_rep_interface.h>
 #include <vrep_interface/v_rep_iiwa.h>
 #include <fstream>
@@ -234,21 +235,21 @@ int main(int argc,
 	if (config.interfaceClass == "kuka_robot_interfaces::IiwaVRepInterface")
 		vrep_interface::VRepInterface::getInstance()->stopSimulation();
 	sleep(1);
-	robot->sendJointPosition(q);
+	robot->sendChainJointPosition(q);
 
 	if (config.interfaceClass == "kuka_robot_interfaces::IiwaVRepInterface")
 		vrep_interface::VRepInterface::getInstance()->startSimulation();
 
 	//get state
 	robot->receiveData(t, dt);
-	q = robot->getKDLJointState();
+	q = robot->getKDLChainJointState();
 
 	//dummy
 	tOld = t;
 	t = ros::Time::now();
 	dt = t - tOld;
 	robot->receiveData(t, dt);
-	q = robot->getKDLJointState();
+	q = robot->getKDLChainJointState();
 
 //	KDL::JntArray qGoal = q;
 
@@ -264,7 +265,7 @@ int main(int argc,
 		//======= get data
 		//of joints
 		robot->receiveData(t, dt);
-		q = robot->getKDLJointState();
+		q = robot->getKDLChainJointState();
 //		LOG_INFO(q.data);
 
 		//and eef

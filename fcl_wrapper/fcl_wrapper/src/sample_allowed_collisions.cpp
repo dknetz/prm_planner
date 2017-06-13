@@ -109,7 +109,7 @@ int main(int argc,
 	robot.reset(new RobotModel(robotDescription));
 	RobotState state;
 
-	FCLWrapper fcl;
+	FCLWrapper fcl(""); //world frame doesn't matter here
 	fcl.setUseCollisionMatrix(false);
 	FCLWrapper::CollisionsVectorObjects collisions;
 

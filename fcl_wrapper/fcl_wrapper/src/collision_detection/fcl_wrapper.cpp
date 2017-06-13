@@ -22,15 +22,26 @@
 #include <ais_definitions/macros.h>
 #include <ais_definitions/exception.h>
 #include <ais_log/log.h>
+#include <ais_util/color.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <fcl/collision.h>
 #include <fcl/broadphase/broadphase_dynamic_AABB_tree.h>
 #include <fcl_wrapper/collision_detection/fcl_wrapper.h>
+#include <visualization_msgs/MarkerArray.h>
 
 using namespace fcl;
 
 namespace fcl_collision_detection
 {
 
+ros::NodeHandle* FCLWrapper::m_nodeHandle = NULL;
+ros::Publisher FCLWrapper::m_pubAABB;
+
+/**
+ * Collision callback. Returns true, if the collision checker
+ * can stop further checking collisions in the corresponding
+ * hierarchy.
+ */
 bool defaultCollisionFunction(fcl::CollisionObject* o1,
 		fcl::CollisionObject* o2,
 		void* cdata_)
@@ -47,9 +58,12 @@ bool defaultCollisionFunction(fcl::CollisionObject* o1,
 
 	if (cdata->cm.get() != NULL)
 	{
-		if (!cdata->cm->collide(po1->getName(), po2->getName()))
+		if (!cdata->cm->canCollide(po1->getName(), po2->getName()))
 		{
-			return true;
+			//No collision happens. We can safely continue, i.e., we return
+			//false and the collision checker continues.
+			cdata->done = false;
+			return false;
 		}
 	}
 
@@ -61,9 +75,9 @@ bool defaultCollisionFunction(fcl::CollisionObject* o1,
 	return cdata->done;
 }
 
-FCLWrapper::FCLWrapper() :
-				m_collisionMatrix(new CollisionMatrix),
-				m_useCollisionMatrix(true)
+FCLWrapper::FCLWrapper(const std::string& worldFrame) :
+				m_useCollisionMatrix(true),
+				c_worldFrame(worldFrame)
 {
 }
 
@@ -91,12 +105,6 @@ void FCLWrapper::addObject(boost::shared_ptr<PhysicalObject> object,
 		throw ais_definitions::Exception(std::string("The object already exists in the FCLWrapper"));
 	}
 
-	//collision checks against all links
-	if (checkAllCollisions)
-	{
-		m_collisionMatrix->setDoAllCollisionChecks(name, true);
-	}
-
 	m_worldObjects[name] = CONVERT_TO_STD_POINTER(object);
 }
 
@@ -117,7 +125,6 @@ void FCLWrapper::addObject(boost::shared_ptr<Collection> collection)
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 
-	const CollisionMatrix::Ptr& collisionMatrix = collection->getCollisionMatrix();
 	const ObjectMap& objects = collection->getObjects();
 
 	for (auto& it : objects)
@@ -127,23 +134,6 @@ void FCLWrapper::addObject(boost::shared_ptr<Collection> collection)
 	}
 
 	m_objectHierarchies[collection->getName()] = CONVERT_TO_STD_POINTER(collection);
-
-//	for (auto& it : objects)
-//	{
-//		std::string name = collection->getName() + "/" + it.second->getName();
-//		if (CHECK_MAP(m_worldObjects, name))
-//		{
-//			throw ais_definitions::Exception(std::string("The object ") + name + " already exists!");
-//		}
-//		it.second->initFCLModel();
-//		it.second->setUserData();
-//		m_worldObjects[name] = it.second;
-//	}
-
-	if (collisionMatrix.get() != NULL)
-	{
-		m_collisionMatrix->addOtherCollisionMatrix(collisionMatrix);
-	}
 }
 
 bool FCLWrapper::checkCollisions(bool findAllCollisions)
@@ -185,11 +175,6 @@ bool FCLWrapper::checkCollisions(bool findAllCollisions)
 
 			if (object.get() == NULL)
 				continue;
-
-//			LOG_INFO("Coll Check " << it->first << " " << it2->first);
-//
-//			LOG_INFO("h " << hierarchy->getTree().getRoot()->bv.min_ << " " << hierarchy->getTree().getRoot()->bv.max_);
-//			LOG_INFO("o " << object->getAABB().min_ << " " << object->getAABB().max_);
 
 			hierarchy->collide(object.get(), &data, defaultCollisionFunction);
 
@@ -246,8 +231,9 @@ bool FCLWrapper::checkCollisions(bool findAllCollisions)
 		CollisionData data;
 		data.request.num_max_contacts = 1;
 		if (m_useCollisionMatrix)
-			data.cm = m_collisionMatrix;
+			data.cm = it->second->getCollisionMatrix();
 		hierarchy->collide(&data, defaultCollisionFunction);
+		publish(hierarchy);
 
 		if (data.result.isCollision())
 		{
@@ -277,13 +263,15 @@ bool FCLWrapper::checkPairwiseCollisions(bool findAllCollisions)
 		it.second->setNoCollision();
 	}
 
-	m_collisions.clear();
+	m_collisionsObjects.clear();
 
 	std::unordered_map<std::string, FCL_POINTER<PhysicalObject>> worldObjects = m_worldObjects;
+	CollisionMatrix::Ptr collMatrix(new CollisionMatrix);
 
 	for (auto it = m_objectHierarchies.begin(); it != m_objectHierarchies.end(); ++it)
 	{
 		const ObjectMap& objects = it->second->getObjects();
+		collMatrix->addOtherCollisionMatrix(it->second->getCollisionMatrix());
 
 		for (auto& it2 : objects)
 		{
@@ -302,7 +290,7 @@ bool FCLWrapper::checkPairwiseCollisions(bool findAllCollisions)
 		++it2;
 		for (; it2 != worldObjects.end(); ++it2)
 		{
-			if (!m_useCollisionMatrix || m_collisionMatrix->collide(it->first, it2->first))
+			if (!m_useCollisionMatrix || collMatrix->canCollide(it->first, it2->first))
 			{
 				PhysicalObject::CollisionObjectPtr c1 = it->second->getFCLModel();
 				PhysicalObject::CollisionObjectPtr c2 = it2->second->getFCLModel();
@@ -330,14 +318,14 @@ bool FCLWrapper::checkPairwiseCollisions(bool findAllCollisions)
 
 					if (!findAllCollisions)
 					{
-						return m_collisions.size() != 0;;
+						return m_collisionsObjects.size() != 0;;
 					}
 				}
 			}
 		}
 	}
 
-	return m_collisions.size() != 0;
+	return m_collisionsObjects.size() != 0;
 }
 
 bool FCLWrapper::isUseCollisionMatrix() const
@@ -378,36 +366,192 @@ void FCLWrapper::updateCollisionsVector(std::vector<fcl::Contact>& contacts,
 		const std::string& object1,
 		const std::string& object2)
 {
-//	for (auto& contact : contacts)
-//	{
-//		PhysicalObject* o1 = (PhysicalObject*) contact.o1->getUserData();
-//		PhysicalObject* o2 = (PhysicalObject*) contact.o2->getUserData();
-//
-//		if (o1 != NULL && o2 != NULL)
-//		{
-//			LOG_INFO("collision between " << o1->getName() << " and " << o2->getName());
-//			o1->setHasCollision(true);
-//			o2->setHasCollision(true);
-//			m_collisions.push_back(std::make_pair(o1->getName(), o2->getName()));
-//		}
-//		else if (o1 != NULL)
-//		{
-//			LOG_INFO("collision of " << o1->getName());
-//			o1->setHasCollision(true);
-//			m_collisions.push_back(std::make_pair(o1->getName(), "unknown"));
-//		}
-//		else if (o2 != NULL)
-//		{
-//			LOG_INFO("collision of between " << object << " and " << o2->getName());
-//			o2->setHasCollision(true);
-//			m_collisions.push_back(std::make_pair(object, o2->getName()));
-//		}
-//		else
-//		{
+	for (auto& contact : contacts)
+	{
+		void* p1 = contact.o1->getUserData();
+		void* p2 = contact.o2->getUserData();
+
+		if (p1 != NULL && p2 != NULL)
+		{
+			std::string* o1 = (std::string*) contact.o1->getUserData();
+			std::string* o2 = (std::string*) contact.o2->getUserData();
+
+//			LOG_INFO("collision between " << *o1 << " and " << *o2);
+			m_collisions.push_back(std::make_pair(*o1, *o2));
+		}
+		else if (p1 != NULL)
+		{
+			std::string* o1 = (std::string*) contact.o1->getUserData();
+
+//			LOG_INFO("collision of " << *o1);
+			m_collisions.push_back(std::make_pair(*o1, object2));
+		}
+		else if (p2 != NULL)
+		{
+			std::string* o2 = (std::string*) contact.o2->getUserData();
+
+//			LOG_INFO("collision of " << *o2);
+			m_collisions.push_back(std::make_pair(object1, *o2));
+		}
+		else
+		{
 //			LOG_INFO("found a collision between " << object1 << " and " << object2);
 			m_collisions.push_back(std::make_pair(object1, object2));
-//		}
-//	}
+		}
+	}
+}
+
+void FCLWrapper::publish(fcl::DynamicAABBTreeCollisionManager* collisionManager)
+{
+	if (m_nodeHandle == NULL)
+	{
+		m_nodeHandle = new ros::NodeHandle;
+		m_pubAABB = m_nodeHandle->advertise<visualization_msgs::MarkerArray>("fcl_aabb", 1);
+	}
+
+	if (m_pubAABB.getNumSubscribers() > 0)
+	{
+		std::vector<fcl::CollisionObject*> objects;
+		collisionManager->getObjects(objects);
+		visualization_msgs::MarkerArray markers;
+		for (auto& it : objects)
+		{
+//			if (((PhysicalObject* )it->getUserData())->getName() != "head_tilt_link"
+//					&& ((PhysicalObject* )it->getUserData())->getName() != "head_pan_link")
+//				continue;
+
+			fcl::AABB aabb = it->getAABB();
+			visualization_msgs::Marker marker;
+			marker.header.frame_id = c_worldFrame;
+			marker.header.stamp = ros::Time();
+			marker.ns = ((PhysicalObject*) it->getUserData())->getName();
+			marker.id = 0;
+			marker.action = visualization_msgs::Marker::ADD;
+			marker.type = visualization_msgs::Marker::LINE_LIST;
+			marker.scale.x = 0.01;
+
+			//bottom layer
+			geometry_msgs::Point p1, p2;
+			p1.x = aabb.min_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.min_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.min_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.min_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.min_[1];
+			p2.z = aabb.min_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.max_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.min_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.min_[0];
+			p1.y = aabb.max_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.min_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			//top layer
+			p1.x = aabb.min_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.max_[2];
+			p2.x = aabb.min_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.min_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.max_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.min_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.max_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.max_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.min_[0];
+			p1.y = aabb.max_[1];
+			p1.z = aabb.max_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			//connection
+			p1.x = aabb.min_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.min_[0];
+			p2.y = aabb.min_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.min_[0];
+			p1.y = aabb.max_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.min_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.max_[0];
+			p1.y = aabb.min_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.min_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			p1.x = aabb.max_[0];
+			p1.y = aabb.max_[1];
+			p1.z = aabb.min_[2];
+			p2.x = aabb.max_[0];
+			p2.y = aabb.max_[1];
+			p2.z = aabb.max_[2];
+			marker.points.push_back(p1);
+			marker.points.push_back(p2);
+
+			Eigen::Affine3d t;
+			t.setIdentity();
+//			fcl::Vec3f center = aabb.center();
+//			t.translation() = Eigen::Vector3d(center[0], center[1], center[2]);
+			marker.color = ais_util::Color::blue().toROSMsg();
+			tf::poseEigenToMsg(t, marker.pose);
+			markers.markers.push_back(marker);
+		}
+		m_pubAABB.publish(markers);
+	}
 }
 
 } /* namespace FCLCollisionDetectionWrapper */

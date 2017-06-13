@@ -24,7 +24,8 @@
 namespace prm_planner
 {
 
-class Path;
+FORWARD_DECLARE(Path);
+FORWARD_DECLARE(Kinematics);
 
 class Trajectory
 {
@@ -42,9 +43,9 @@ public:
 		}
 		Pose(const Eigen::Affine3d& pose);
 		Pose(const KDL::Frame& pose);
-		Pose(const boost::shared_ptr<KDL::ChainFkSolverPos_recursive>& fk,
+		Pose(const boost::shared_ptr<Kinematics>& fk,
 				const KDL::JntArray& joints);
-		void reset(const boost::shared_ptr<KDL::ChainFkSolverPos_recursive>& fk,
+		void reset(const boost::shared_ptr<Kinematics>& fk,
 				const KDL::JntArray& joints);
 		void reset(const Eigen::Affine3d& pose);
 		void updateRotation();

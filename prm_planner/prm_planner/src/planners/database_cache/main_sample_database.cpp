@@ -62,8 +62,8 @@ void samplePaths(const std::string& database,
 		int found = 10;
 		while (found > 0)
 		{
-			robot->sampleValidJointState(startSample, true);
-			robot->sampleValidJointState(goalSample, true);
+			robot->sampleValidChainJointState(startSample, true);
+			robot->sampleValidChainJointState(goalSample, true);
 
 			robot->getFK(startSample, start);
 			robot->getFK(goalSample, goal);

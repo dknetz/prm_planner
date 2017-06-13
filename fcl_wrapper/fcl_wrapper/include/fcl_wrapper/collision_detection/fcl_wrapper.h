@@ -22,12 +22,15 @@
 #define AlXM0V7pXEqpklU2Okoc
 
 #include <boost/thread/recursive_mutex.hpp>
+#include <fcl/broadphase/broadphase_dynamic_AABB_tree.h>
 #include <fcl/collision_data.h>
 #include <fcl_wrapper/collision_detection/collection.h>
 #include <fcl_wrapper/collision_detection/collision_matrix.h>
 #include <fcl_wrapper/collision_detection/fcl_pointer.h>
 #include <fcl_wrapper/collision_detection/fcl_wrapper.h>
 #include <fcl_wrapper/collision_detection/physical_object.h>
+#include <ros/node_handle.h>
+#include <ros/publisher.h>
 #include <string>
 #include <unordered_map>
 
@@ -60,7 +63,7 @@ public:
 		bool done;
 	};
 
-	FCLWrapper();
+	FCLWrapper(const std::string& worldFrame);
 	virtual ~FCLWrapper();
 
 	/**
@@ -96,6 +99,8 @@ public:
 	void lock();
 	void unlock();
 
+	void publish(fcl::DynamicAABBTreeCollisionManager* collisionManager);
+
 private:
 	void updateCollisionsVector(std::vector<fcl::Contact>& contacts,
 			const std::string& object1,
@@ -105,10 +110,12 @@ protected:
 	mutable boost::recursive_mutex m_mutex;
 	std::unordered_map<std::string, FCL_POINTER<PhysicalObject>> m_worldObjects;
 	std::unordered_map<std::string, FCL_POINTER<Collection>> m_objectHierarchies;
-	CollisionMatrix::Ptr m_collisionMatrix;
 	CollisionsVector m_collisions;
 	CollisionsVectorObjects m_collisionsObjects;
 	bool m_useCollisionMatrix;
+	const std::string c_worldFrame;
+	static ros::NodeHandle* m_nodeHandle;
+	static ros::Publisher m_pubAABB;
 };
 
 }

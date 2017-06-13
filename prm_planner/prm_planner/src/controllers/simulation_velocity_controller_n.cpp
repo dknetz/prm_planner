@@ -15,9 +15,9 @@
 #include <prm_planner/problem_definitions/problem_definition.h>
 #include <prm_planner_constraints/constraint_factory.h>
 #include <prm_planner_constraints/constraint_xyzrpy.h>
-#include <prm_planner_controller/jacobian_multi_solver.h>
 #include <prm_planner_robot/path.h>
 #include <prm_planner_robot/robot_arm.h>
+#include <prm_planner_robot/kinematics.h>
 #include <prm_planner/util/parameter_server.h>
 #include <iosfwd>
 
@@ -89,7 +89,7 @@ SimulationVelocityControllerN<Dim, Type>::SimulationVelocityControllerN(
 	this->m_counter = controller->m_counter;
 	this->m_path = controller->m_path;
 	this->m_trajectory = controller->m_trajectory;
-	this->m_kdtree = controller->m_kdtree;
+//	this->m_kdtree = controller->m_kdtree;
 	controller->unlock();
 }
 
@@ -121,7 +121,7 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 	KDL::JntArray cmd(nrOfJoints);
 
 	//get data
-	this->m_x.reset(this->m_fkSolver, this->m_q); //this->m_robotArm->getFkSolver()
+	this->m_x.reset(this->m_kinematics, this->m_q); //this->m_robotArm->getFkSolver()
 
 	//store trajectory for visualization and follow joint trajectory
 	//interface
@@ -152,8 +152,10 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 		return false;
 	}
 
-	this->m_jacobianSolver->template GetAllJacobians<Dim>(this->m_q, this->m_jacobians);
-	this->m_jacobian = this->m_jacobians.back();
+	//get jacobian
+	this->m_kinematics->getJacobian(this->m_q, this->m_kdlJacobian);
+	this->m_jacobian = this->m_kdlJacobian.data;
+
 //	ais_util::StopWatch::getInstance()->stopPrint("jacobian");
 
 //and inverse

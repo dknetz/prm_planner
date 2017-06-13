@@ -48,6 +48,7 @@ void Octomap::updateOctomap(boost::shared_ptr<octomap::OcTree> octomap)
 	m_octree = octomap;
 
 	FCL_POINTER<fcl::OcTree> fclOctree(new fcl::OcTree(CONVERT_TO_STD_POINTER(m_octree)));
+	fclOctree->setUserData(&m_name);
 	CollisionObjectPtr collisionObject(new fcl::CollisionObject(fclOctree, fcl::Transform3f()));
 
 	m_fclOctree = fclOctree;

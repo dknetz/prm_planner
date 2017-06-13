@@ -16,9 +16,11 @@ using fcl::CollisionObject;
 namespace fcl_robot_model
 {
 
-Box::Box(double sizeX,
+Box::Box(const std::string& name,
+		double sizeX,
 		double sizeY,
 		double sizeZ) :
+				Geometry(name),
 				m_sizeX(sizeX),
 				m_sizeY(sizeY),
 				m_sizeZ(sizeZ)
@@ -31,9 +33,11 @@ Box::~Box()
 
 void Box::getFCLModel(const fcl::Transform3f& transform,
 		FCL_POINTER<fcl::CollisionObject>& fclCollisionModel)
-{
-	FCL_POINTER<fcl::Box> model(new fcl::Box(m_sizeX, m_sizeY, m_sizeZ));
-	fclCollisionModel.reset(new fcl::CollisionObject(model, transform));
-}
+		{
+			FCL_POINTER<fcl::Box> model(new fcl::Box(m_sizeX, m_sizeY, m_sizeZ));
+			model->setUserData(&c_name);
+			fclCollisionModel.reset(new fcl::CollisionObject(model, transform));
+		}
 
-} /* namespace fcl_robot_model */
+	}
+	/* namespace fcl_robot_model */

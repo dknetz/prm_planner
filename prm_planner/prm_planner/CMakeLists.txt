@@ -125,6 +125,7 @@ set(SOURCE_FILES
     src/visualization/robot_arm_interactive_marker.cpp
     src/visualization/task_pose_interactive_marker.cpp
     src/visualization/robot_trajectory_visualizer.cpp
+    src/visualization/robot_pose_visualizer.cpp
     
     src/planners/rrt/rrt.cpp
     src/planners/rrt/rrt_node.cpp
