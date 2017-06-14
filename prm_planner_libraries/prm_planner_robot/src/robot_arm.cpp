@@ -80,7 +80,7 @@ RobotArm::RobotArm(const RobotArmConfig& armConfig,
 			m_chainLimitMax(i, 0) = m_urdf.joints_[it]->limits->upper - 0.05;
 		}
 
-		LOG_INFO(m_chain.getSegment(i).getJoint().getName() << " "<<m_chainLimitMin(i, 0) << " " << m_chainLimitMax(i, 0));
+//		LOG_INFO(m_chain.getSegment(i).getJoint().getName() << " "<<m_chainLimitMin(i, 0) << " " << m_chainLimitMax(i, 0));
 		++i;
 	}
 

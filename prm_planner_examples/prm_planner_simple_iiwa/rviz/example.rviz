@@ -204,126 +204,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        iiwa_0_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_1_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_2_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_3_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_4_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_5_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_6_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_7_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_adapter_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        iiwa_base_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        iiwa_flange_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        sdh2_adapter_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_finger_11_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_finger_12_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_finger_13_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_finger_21_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_finger_22_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_finger_23_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_grasp_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        sdh2_palm_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_push_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        sdh2_thumb_1_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_thumb_2_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_thumb_3_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sdh2_tip_link_trajectory_15145567424672997899:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
       Name: Planned Trajectory
       Robot Description: /prm_planner/prm_planner/iiwa/robot_description_trajectory
       TF Prefix: iiwa
@@ -365,13 +245,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /prm_planner/fcl_aabb
       Name: "FCL: AABB"
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

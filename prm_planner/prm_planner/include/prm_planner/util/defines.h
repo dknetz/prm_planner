@@ -50,11 +50,13 @@ struct PlanningParameters
 {
 	PlanningParameters() :
 					directConnectionRequired(false),
+					useCollisionDetection(true),
 					mode(Default)
 	{
 	}
 
 	bool directConnectionRequired;
+	bool useCollisionDetection;
 	PlanningMode mode;
 	std::string objectName;
 	std::vector<std::string> input;

@@ -1,0 +1,1 @@
+To use this kinematics library you need to install pr2_arm_kinematics package.

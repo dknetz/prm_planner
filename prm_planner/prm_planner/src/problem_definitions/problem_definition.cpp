@@ -285,9 +285,13 @@ bool ProblemDefinition::planDefault(const KDL::JntArray& startJoint,
 		return true;
 	}
 
-	m_mutex.lock_shared();
-	boost::shared_ptr<CollisionDetector> cd(new CollisionDetector(m_robot, m_planningScene));
-	m_mutex.unlock_shared();
+	boost::shared_ptr<CollisionDetector> cd;
+	if (params.useCollisionDetection)
+	{
+		m_mutex.lock_shared();
+		cd.reset(new CollisionDetector(m_robot, m_planningScene));
+		m_mutex.unlock_shared();
+	}
 
 	FeasibilityChecker feasibilityChecker(m_robot);
 	if (!feasibilityChecker.check(goal, cd, true))

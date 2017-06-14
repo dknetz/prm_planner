@@ -124,7 +124,7 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 	//we found no direct connection, if one is required return
 	if (directConnectionRequired)
 	{
-		LOG_INFO("Direct connection required, but no plan was found");
+//		LOG_INFO("Direct connection required, but no plan was found");
 		delete view;
 		return false;
 	}

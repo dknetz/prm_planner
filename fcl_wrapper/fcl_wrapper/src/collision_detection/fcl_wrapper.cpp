@@ -366,39 +366,39 @@ void FCLWrapper::updateCollisionsVector(std::vector<fcl::Contact>& contacts,
 		const std::string& object1,
 		const std::string& object2)
 {
-	for (auto& contact : contacts)
-	{
-		void* p1 = contact.o1->getUserData();
-		void* p2 = contact.o2->getUserData();
-
-		if (p1 != NULL && p2 != NULL)
-		{
-			std::string* o1 = (std::string*) contact.o1->getUserData();
-			std::string* o2 = (std::string*) contact.o2->getUserData();
-
-//			LOG_INFO("collision between " << *o1 << " and " << *o2);
-			m_collisions.push_back(std::make_pair(*o1, *o2));
-		}
-		else if (p1 != NULL)
-		{
-			std::string* o1 = (std::string*) contact.o1->getUserData();
-
-//			LOG_INFO("collision of " << *o1);
-			m_collisions.push_back(std::make_pair(*o1, object2));
-		}
-		else if (p2 != NULL)
-		{
-			std::string* o2 = (std::string*) contact.o2->getUserData();
-
-//			LOG_INFO("collision of " << *o2);
-			m_collisions.push_back(std::make_pair(object1, *o2));
-		}
-		else
-		{
-//			LOG_INFO("found a collision between " << object1 << " and " << object2);
+//	for (auto& contact : contacts)
+//	{
+//		void* p1 = contact.o1->getUserData();
+//		void* p2 = contact.o2->getUserData();
+//
+//		if (p1 != NULL && p2 != NULL)
+//		{
+//			std::string* o1 = (std::string*) contact.o1->getUserData();
+//			std::string* o2 = (std::string*) contact.o2->getUserData();
+//
+////			LOG_INFO("collision between " << *o1 << " and " << *o2);
+//			m_collisions.push_back(std::make_pair(*o1, *o2));
+//		}
+//		else if (p1 != NULL)
+//		{
+//			std::string* o1 = (std::string*) contact.o1->getUserData();
+//
+////			LOG_INFO("collision of " << *o1);
+//			m_collisions.push_back(std::make_pair(*o1, object2));
+//		}
+//		else if (p2 != NULL)
+//		{
+//			std::string* o2 = (std::string*) contact.o2->getUserData();
+//
+////			LOG_INFO("collision of " << *o2);
+//			m_collisions.push_back(std::make_pair(object1, *o2));
+//		}
+//		else
+//		{
+////			LOG_INFO("found a collision between " << object1 << " and " << object2);
 			m_collisions.push_back(std::make_pair(object1, object2));
-		}
-	}
+//		}
+//	}
 }
 
 void FCLWrapper::publish(fcl::DynamicAABBTreeCollisionManager* collisionManager)
