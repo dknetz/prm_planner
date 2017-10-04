@@ -32,8 +32,8 @@
 namespace prm_planner
 {
 
-template<int Dim, class Type>
-std::unordered_map<std::string, ros::Publisher> VelocityController<Dim, Type>::s_pubBubbles;
+//template<int Dim, class Type>
+//std::unordered_map<std::string, ros::Publisher> VelocityController<Dim, Type>::s_pubBubbles;
 
 template<int Dim, class Type>
 std::unordered_map<std::string, ros::Publisher> VelocityController<Dim, Type>::s_pubTrajectory;
@@ -141,101 +141,101 @@ void VelocityController<Dim, Type>::publish()
 	static std_msgs::ColorRGBA red = ais_util::Color::red().toROSMsg();
 	static std_msgs::ColorRGBA green = ais_util::Color::green().toROSMsg();
 
-	if (s_pubBubbles[c_armName].getNumSubscribers() > 0)
-	{
-		boost::recursive_mutex::scoped_try_lock lock(m_mutex);
-		if (lock.owns_lock())
-		{
-			visualization_msgs::MarkerArray markers;
-
-			int id = 0;
-
-			Type diameter;
-			for (auto& it : m_collisionStrip)
-			{
-				diameter = it.radius * 2.0;
-				{
-					visualization_msgs::Marker marker;
-					marker.header.frame_id = m_robotArm->getRootFrame();
-					marker.header.stamp = ros::Time();
-					marker.ns = "bubble";
-					marker.id = id++;
-					marker.type = visualization_msgs::Marker::SPHERE;
-					marker.action = visualization_msgs::Marker::ADD;
-					marker.scale.x = diameter;
-					marker.scale.y = diameter;
-					marker.scale.z = diameter;
-					marker.color = it.radius < c_parameters.collisionDetectionStopDistance ? red : green;
-					marker.color.a = 0.5;
-					marker.pose.position.x = it.position.x();
-					marker.pose.position.y = it.position.y();
-					marker.pose.position.z = it.position.z();
-					markers.markers.push_back(marker);
-				}
-				diameter = c_parameters.collisionDetectionStopDistance * 2;
-				{
-					visualization_msgs::Marker marker;
-					marker.header.frame_id = m_robotArm->getRootFrame();
-					marker.header.stamp = ros::Time();
-					marker.ns = "bubble_stop";
-					marker.id = id++;
-					marker.type = visualization_msgs::Marker::SPHERE;
-					marker.action = visualization_msgs::Marker::ADD;
-					marker.scale.x = diameter;
-					marker.scale.y = diameter;
-					marker.scale.z = diameter;
-					marker.color.a = 0.5;
-					marker.color.r = 1.0;
-					marker.color.g = 0.0;
-					marker.color.b = 0.0;
-					marker.pose.position.x = it.position.x();
-					marker.pose.position.y = it.position.y();
-					marker.pose.position.z = it.position.z();
-					markers.markers.push_back(marker);
-				}
-				{
-					visualization_msgs::Marker marker;
-					marker.header.frame_id = m_robotArm->getRootFrame();
-					marker.header.stamp = ros::Time();
-					marker.ns = "contact_point";
-					marker.id = id++;
-					marker.type = visualization_msgs::Marker::SPHERE;
-					marker.action = visualization_msgs::Marker::ADD;
-					marker.scale.x = 0.03;
-					marker.scale.y = 0.03;
-					marker.scale.z = 0.03;
-					marker.color = ais_util::Color::red().toROSMsg();
-					marker.pose.position.x = it.position.x() - it.obstacleToRobot.x();
-					marker.pose.position.y = it.position.y() - it.obstacleToRobot.y();
-					marker.pose.position.z = it.position.z() - it.obstacleToRobot.z();
-					markers.markers.push_back(marker);
-				}
-				{
-					visualization_msgs::Marker marker;
-					marker.header.frame_id = m_robotArm->getRootFrame();
-					marker.header.stamp = ros::Time();
-					marker.ns = "contact_point";
-					marker.id = id++;
-					marker.type = visualization_msgs::Marker::ARROW;
-					marker.action = visualization_msgs::Marker::ADD;
-					marker.scale.x = 0.005; //shaft diameter
-					marker.scale.y = 0.01; //head diameter
-					marker.scale.z = 0.02; //head length
-					marker.color = ais_util::Color::blue().toROSMsg();
-					marker.points.resize(2);
-					marker.points[0].x = it.position.x() - it.obstacleToRobot.x();
-					marker.points[0].y = it.position.y() - it.obstacleToRobot.y();
-					marker.points[0].z = it.position.z() - it.obstacleToRobot.z();
-					marker.points[1].x = it.position.x();
-					marker.points[1].y = it.position.y();
-					marker.points[1].z = it.position.z();
-					markers.markers.push_back(marker);
-				}
-			}
-
-			s_pubBubbles[c_armName].publish(markers);
-		}
-	}
+//	if (s_pubBubbles[c_armName].getNumSubscribers() > 0)
+//	{
+//		boost::recursive_mutex::scoped_try_lock lock(m_mutex);
+//		if (lock.owns_lock())
+//		{
+//			visualization_msgs::MarkerArray markers;
+//
+//			int id = 0;
+//
+//			Type diameter;
+//			for (auto& it : m_collisionStrip)
+//			{
+//				diameter = it.radius * 2.0;
+//				{
+//					visualization_msgs::Marker marker;
+//					marker.header.frame_id = m_robotArm->getRootFrame();
+//					marker.header.stamp = ros::Time();
+//					marker.ns = "bubble";
+//					marker.id = id++;
+//					marker.type = visualization_msgs::Marker::SPHERE;
+//					marker.action = visualization_msgs::Marker::ADD;
+//					marker.scale.x = diameter;
+//					marker.scale.y = diameter;
+//					marker.scale.z = diameter;
+//					marker.color = it.radius < c_parameters.collisionDetectionStopDistance ? red : green;
+//					marker.color.a = 0.5;
+//					marker.pose.position.x = it.position.x();
+//					marker.pose.position.y = it.position.y();
+//					marker.pose.position.z = it.position.z();
+//					markers.markers.push_back(marker);
+//				}
+//				diameter = c_parameters.collisionDetectionStopDistance * 2;
+//				{
+//					visualization_msgs::Marker marker;
+//					marker.header.frame_id = m_robotArm->getRootFrame();
+//					marker.header.stamp = ros::Time();
+//					marker.ns = "bubble_stop";
+//					marker.id = id++;
+//					marker.type = visualization_msgs::Marker::SPHERE;
+//					marker.action = visualization_msgs::Marker::ADD;
+//					marker.scale.x = diameter;
+//					marker.scale.y = diameter;
+//					marker.scale.z = diameter;
+//					marker.color.a = 0.5;
+//					marker.color.r = 1.0;
+//					marker.color.g = 0.0;
+//					marker.color.b = 0.0;
+//					marker.pose.position.x = it.position.x();
+//					marker.pose.position.y = it.position.y();
+//					marker.pose.position.z = it.position.z();
+//					markers.markers.push_back(marker);
+//				}
+//				{
+//					visualization_msgs::Marker marker;
+//					marker.header.frame_id = m_robotArm->getRootFrame();
+//					marker.header.stamp = ros::Time();
+//					marker.ns = "contact_point";
+//					marker.id = id++;
+//					marker.type = visualization_msgs::Marker::SPHERE;
+//					marker.action = visualization_msgs::Marker::ADD;
+//					marker.scale.x = 0.03;
+//					marker.scale.y = 0.03;
+//					marker.scale.z = 0.03;
+//					marker.color = ais_util::Color::red().toROSMsg();
+//					marker.pose.position.x = it.position.x() - it.obstacleToRobot.x();
+//					marker.pose.position.y = it.position.y() - it.obstacleToRobot.y();
+//					marker.pose.position.z = it.position.z() - it.obstacleToRobot.z();
+//					markers.markers.push_back(marker);
+//				}
+//				{
+//					visualization_msgs::Marker marker;
+//					marker.header.frame_id = m_robotArm->getRootFrame();
+//					marker.header.stamp = ros::Time();
+//					marker.ns = "contact_point";
+//					marker.id = id++;
+//					marker.type = visualization_msgs::Marker::ARROW;
+//					marker.action = visualization_msgs::Marker::ADD;
+//					marker.scale.x = 0.005; //shaft diameter
+//					marker.scale.y = 0.01; //head diameter
+//					marker.scale.z = 0.02; //head length
+//					marker.color = ais_util::Color::blue().toROSMsg();
+//					marker.points.resize(2);
+//					marker.points[0].x = it.position.x() - it.obstacleToRobot.x();
+//					marker.points[0].y = it.position.y() - it.obstacleToRobot.y();
+//					marker.points[0].z = it.position.z() - it.obstacleToRobot.z();
+//					marker.points[1].x = it.position.x();
+//					marker.points[1].y = it.position.y();
+//					marker.points[1].z = it.position.z();
+//					markers.markers.push_back(marker);
+//				}
+//			}
+//
+//			s_pubBubbles[c_armName].publish(markers);
+//		}
+//	}
 
 	if (s_pubTrajectory[c_armName].getNumSubscribers() > 0)
 	{
@@ -417,8 +417,7 @@ bool VelocityController<Dim, Type>::update(const ros::Time& now,
 	//			+ weight * m_qNullSpaceJointRange
 	//			+ (1.0 - weight) * m_qNullSpaceCollisionAvoidance;
 
-	if (!isValidCommand(cmd, 0.0, -0.02)
-			/*|| (c_parameters.collisionAvoidanceUse && checkCollision())*/)
+	if (!isValidCommand(cmd, m_dt.toSec(), 0.02))
 	{
 		stopMotion();
 		boost::recursive_mutex::scoped_lock lock(m_mutex);
@@ -427,6 +426,8 @@ bool VelocityController<Dim, Type>::update(const ros::Time& now,
 			LOG_WARNING(c_armName << ": Command was invalid (nan or joint limits) or a collision check stopped the execution! Current pose:");
 			LOG_INFO(c_armName << ": " << m_q.data.transpose());
 			LOG_INFO(c_armName << " (cmd): " << (cmd.data * m_dt.toSec()).transpose());
+			LOG_INFO(c_armName << " (lower limit): " << s_limitLower.transpose());
+			LOG_INFO(c_armName << " (upper limit): " << s_limitUpper.transpose());
 			LOG_INFO(m_dt.toSec());
 			LOG_INFO(m_xDesiredDot.transpose());
 			LOG_INFO(m_error.transpose());
@@ -512,7 +513,7 @@ void VelocityController<Dim, Type>::initController()
 	m_x = m_x0 = m_xGoal = m_xPredicted = m_xPredictedOld = Trajectory::Pose(m_kinematics, m_q);
 
 	//collision bubbles
-	resetCollisionStrip(m_q);
+//	resetCollisionStrip(m_q);
 
 	m_counter = 0;
 }
@@ -657,44 +658,44 @@ void VelocityController<Dim, Type>::limitJointVelocities(VectorNd& cmd,
 	}
 }
 
-template<int Dim, class Type>
-void VelocityController<Dim, Type>::resetCollisionStrip(const KDL::JntArray& joints)
-{
-	KDL::Frame x;
-	Matrix6xN j;
-	Matrix3xN j2;
-	MatrixNx3 pinv;
-
-	const size_t size = m_robotArm->getChain().getNrOfSegments();
-
-	m_collisionStrip.clear();
-
-	for (size_t i = 0; i < size; ++i)
-	{
-		if (m_robotArm->getChain().segments[i].getJoint().getType() == KDL::Joint::None)
-		{
-			continue;
-		}
-
-		m_kinematics->getFK(joints, x, i);
-		m_kinematics->getJacobian(m_q, m_kdlJacobian, i);
-		j = m_kdlJacobian.data;
-//		m_fkSolver->JntToCart(joints, x, i);
-//		m_jacobianSolver->JntToJac(m_q, j, i);
-		if (j.isZero())
-		{
-			continue;
-		}
-
-		Eigen::Vector3d pos(x.p.x(), x.p.y(), x.p.z());
-
-		ControllerBubble b;
-		b.radius = 0.15;
-		b.position = pos;
-		b.segment = i; //required to get the right J's
-		m_collisionStrip.push_back(b);
-	}
-}
+//template<int Dim, class Type>
+//void VelocityController<Dim, Type>::resetCollisionStrip(const KDL::JntArray& joints)
+//{
+//	KDL::Frame x;
+//	Matrix6xN j;
+//	Matrix3xN j2;
+//	MatrixNx3 pinv;
+//
+//	const size_t size = m_robotArm->getChain().getNrOfSegments();
+//
+//	m_collisionStrip.clear();
+//
+//	for (size_t i = 0; i < size; ++i)
+//	{
+//		if (m_robotArm->getChain().segments[i].getJoint().getType() == KDL::Joint::None)
+//		{
+//			continue;
+//		}
+//
+//		m_kinematics->getFK(joints, x, i);
+//		m_kinematics->getJacobian(m_q, m_kdlJacobian, i);
+//		j = m_kdlJacobian.data;
+////		m_fkSolver->JntToCart(joints, x, i);
+////		m_jacobianSolver->JntToJac(m_q, j, i);
+//		if (j.isZero())
+//		{
+//			continue;
+//		}
+//
+//		Eigen::Vector3d pos(x.p.x(), x.p.y(), x.p.z());
+//
+//		ControllerBubble b;
+//		b.radius = 0.15;
+//		b.position = pos;
+//		b.segment = i; //required to get the right J's
+//		m_collisionStrip.push_back(b);
+//	}
+//}
 
 template<int Dim, class Type>
 void VelocityController<Dim, Type>::addNullSpaceMiddleJointRange()
@@ -702,6 +703,22 @@ void VelocityController<Dim, Type>::addNullSpaceMiddleJointRange()
 	VectorNd jointRange = -m_lambda.cwiseProduct((2.0 * (m_q.data - s_limitRangeCenters)).cwiseQuotient(s_limitSquaredRange));
 
 	m_qNullSpaceJointRange = m_N * jointRange;
+}
+
+template<int Dim, class Type>
+Type VelocityController<Dim, Type>::computeJointRangeWeight()
+{
+	const Type std = c_parameters.jointRangeNullspaceWeightStd;
+	const Type normalWeightJointRange = c_parameters.jointRangeNullspaceWeightDefault;
+	Type x = std::numeric_limits<Type>::max();
+	Type min;
+	for (int i = 0; i < m_q.rows(); ++i)
+	{
+		min = std::min(fabs(m_q(i, 0) - s_limitLower(i, 0)), fabs(m_q(i, 0) - s_limitUpper(i, 0)));
+		x = std::min(x, min);
+	}
+
+	return ((1.0 - normalWeightJointRange) * exp(-(x * x) / (2 * std * std))) + normalWeightJointRange;
 }
 
 //template<int Dim, class Type>
@@ -821,22 +838,6 @@ void VelocityController<Dim, Type>::addNullSpaceMiddleJointRange()
 //}
 
 //template<int Dim, class Type>
-//Type VelocityController<Dim, Type>::computeJointRangeWeight()
-//{
-//	const Type std = c_parameters.jointRangeNullspaceWeightStd;
-//	const Type normalWeightJointRange = c_parameters.jointRangeNullspaceWeightDefault;
-//	Type x = std::numeric_limits<Type>::max();
-//	Type min;
-//	for (int i = 0; i < m_q.rows(); ++i)
-//	{
-//		min = std::min(fabs(m_q(i, 0) - s_limitLower(i, 0)), fabs(m_q(i, 0) - s_limitUpper(i, 0)));
-//		x = std::min(x, min);
-//	}
-//
-//	return ((1.0 - normalWeightJointRange) * exp(-(x * x) / (2 * std * std))) + normalWeightJointRange;
-//}
-
-//template<int Dim, class Type>
 //bool VelocityController<Dim, Type>::checkCollision()
 //{
 //	boost::recursive_mutex::scoped_lock lock(m_mutex);
@@ -863,6 +864,16 @@ bool VelocityController<Dim, Type>::isGoalReached(Trajectory::Pose& current)
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 	return c_constraint->isGoalReached(m_xGoal, current,
 			c_parameters.thresholdGoalReachedPos, c_parameters.thresholdGoalReachedAng);
+}
+
+template<int Dim, class Type>
+bool VelocityController<Dim, Type>::writeData(const std::string& baseFileName)
+{
+	if (m_trajectory != NULL)
+	{
+		m_trajectory->writeGnuplotFile(baseFileName + "_spline.traj");
+	}
+	return true;
 }
 
 template class VelocityController<7, double> ;

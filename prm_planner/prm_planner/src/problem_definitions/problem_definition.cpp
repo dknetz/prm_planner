@@ -29,14 +29,15 @@
 #include <prm_planner/util/parameter_server.h>
 #include <prm_planner_constraints/constraint_factory.h>
 #include <prm_planner_robot/path.h>
-#include <prm_planner/planners/database_cache/database_cached_planner.h>
 #include <prm_planner/planners/prm/prma_star.h>
 #include <prm_planner/planners/rrt/rrt.h>
 #include <prm_planner/problem_definitions/problem_definition_manager.h>
 #include <prm_planner/util/defines.h>
 #include <prm_planner/objects/dropping_region.h>
+#include <prm_planner/path_database/path_database.h>
 #include <prm_planner/problem_definitions/approaching_problem_definition.h>
 #include <prm_planner/robot/feasibility_checker.h>
+#include <prm_planner/robot/trajectory_optimizer.h>
 #include <prm_planner/visualization/object_interactive_marker.h>
 #include <prm_planner/visualization/robot_arm_interactive_marker.h>
 
@@ -65,6 +66,7 @@ void ProblemDefinition::init(const boost::shared_ptr<Robot> robot,
 	m_robot = robot;
 	m_constraint = constraint;
 	m_plannerInterface = plannerInterface;
+	m_pathDatabase = PathDatabase::open("...");
 	c_config = config;
 	m_objectManager = ObjectManager::getInstance();
 
@@ -99,10 +101,6 @@ void ProblemDefinition::initPlanner()
 	else if (c_config.plannerType == "rrt")
 	{
 		m_planner.reset(new RRT(shared_from_this(), ParameterServer::maxPlanningTime));
-	}
-	else if (c_config.plannerType == "database_cache")
-	{
-		m_planner.reset(new DatabaseCachedPlanner(shared_from_this()));
 	}
 	else
 	{
@@ -296,11 +294,50 @@ bool ProblemDefinition::planDefault(const KDL::JntArray& startJoint,
 	FeasibilityChecker feasibilityChecker(m_robot);
 	if (!feasibilityChecker.check(goal, cd, true))
 	{
-		LOG_WARNING("Goal state invalid!");
+		LOG_WARNING_COND(VERB, "Goal state invalid!");
 		return false;
 	}
 
-	return m_planner->plan(currentJointPose, currentTaskPose, goal, cd, path, params.directConnectionRequired);
+	//check database if a plan fits
+	path = m_pathDatabase->findBestPlan(currentJointPose, currentTaskPose, goal);
+	if (path.get() != NULL)
+	{
+		LOG_ERROR("Check return value of optimizer (i.e. check if optimizable in optimize()");
+		boost::shared_ptr<Path> optimizedPath(new Path(getFrame()));
+
+		TrajectoryOptimizer opt(path, cd, m_robot, shared_from_this());
+		if (opt.optimize(optimizedPath, true))
+		{
+			path = optimizedPath;
+			return true;
+		}
+	}
+	bool result = m_planner->plan(currentJointPose, currentTaskPose, goal, cd, path, params.directConnectionRequired);
+
+	//optimize trajectory
+	if (result)
+	{
+		//add the path to the database
+		m_pathDatabase->addPath(path);
+
+		//run prune from time to time
+
+		//optimization
+		TrajectoryOptimizer opt(path, cd, m_robot, shared_from_this());
+
+		boost::shared_ptr<Path> optimizedPath(new Path(getFrame()));
+		if (!opt.optimize(optimizedPath, false))
+		{
+			return false;
+		}
+
+		path = optimizedPath;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool ProblemDefinition::planGrasping(const std::string& object,

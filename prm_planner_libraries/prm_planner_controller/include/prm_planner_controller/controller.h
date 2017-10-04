@@ -182,6 +182,13 @@ public:
 			const KDL::JntArray& startJoints);
 	virtual const ArmJointPath& getJointPositions() const;
 
+	/**
+	 * Can be used to write data to file. baseFileName is the
+	 * filename and path without extension (writing multiple
+	 * files is easier, if one just needs to add an extension).
+	 */
+	virtual bool writeData(const std::string& baseFileName);
+
 protected:
 	KDL::JntArray m_q;
 	std::vector<std::string> m_jointNames;

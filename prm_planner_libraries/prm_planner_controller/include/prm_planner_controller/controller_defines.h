@@ -34,6 +34,14 @@ struct ControllerParameters
 	bool debug;
 	double thresholdGoalReachedPos;
 	double thresholdGoalReachedAng;
+	double maxTaskVelPos;
+	double maxTaskVelAng;
+
+	bool optimizeJointRangeInNullspace;
+	double jointRangeNullspaceWeightStd;
+	double jointRangeNullspaceWeightDefault;
+
+	//collision avoidance not used currently
 	bool collisionAvoidanceUse;
 	double collisionAvoidanceRatioDoCollisionChecks; //don't do x% of collision checks
 	double collisionAvoidanceVel0;
@@ -41,10 +49,6 @@ struct ControllerParameters
 	double collisionAvoidanceDistance2;
 	double collisionDetectionStopDistance;
 	double collisionAvoidanceMaxJointVel;
-	double maxTaskVelPos;
-	double maxTaskVelAng;
-	double jointRangeNullspaceWeightStd;
-	double jointRangeNullspaceWeightDefault;
 };
 
 /**

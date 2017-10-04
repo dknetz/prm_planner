@@ -4,15 +4,29 @@ A C++ library created to provide open-source reference implementations of many s
 
 A spline is a formula for smoothly transitioning from one data point to the next in a data set. For example, you could create a spline containing ten colors (each stored as R, G, and B values) to create a color gradient that smoothly transitions from one color to the next.
 
+Example
+-------------
+Create a Catmull-Rom Spline with four data points, and compute the interpolated position at T = 0.5
+```c++
+std::vector<Qvector2D> splinePoints{
+    QVector2D( 0, 0),
+    QVector2D( 5, 0),
+    QVector2D( 8, 3),
+    QVector2D( 6, 1),
+};
+UniformCRSpline<QVector2D> mySpline(splinePoints);
+QVector2D interpolatedPosition = mySpline.getPosition(0.5f);
+```
+
 Features
 -------------
 * Interpolation of catmull-rom splines
-    * Include `spline_library/hermite/cubic/uniform_cr_spline.h`, create a `UniformCRSpline` object, and call its `getPosition` method.
+    * Include `spline_library/splines/uniform_cr_spline.h`, create a `UniformCRSpline` object, and call its `getPosition` method.
     * Several more spline types. See [Spline Types](docs/SplineTypes.md) for the full list
 * Looping Splines
 	* Also called "Periodic" or "Cyclic": These splines form a loop, in that the ending connects with the beginning
 	* Calling getPosition(t) with an out-of-range T value will _wrap around" to the other end of the spline
-    * To make a looping catmull-rom spline, include `spline_library/hermite/cubic/looping_uniform_cr_spline.h` and create a `LoopingUniformCRSpline` object instead.
+    * To make a looping catmull-rom spline, include `spline_library/splines/uniform_cr_spline.h` and create a `LoopingUniformCRSpline` object.
     * Every spline type has both looping and non-looping variants
 * Compute the arc length of a spline
 	* Call a spline's totalLength() method to find the arc length of the entire spline
@@ -40,18 +54,30 @@ Project Layout
 -------------
 The root of the repository is a Qt Creator project that demonstrates some uses of the library. The source for the spline code itself is in the "spline_library" directory, and the code to set up the demo is in the "demo" directory.
 
-Requirements
+Usage
 -------------
+Drop the spline_library directory in the root source folder of your project. It's header-only, so from here all you need to do is import it from your own code.
+
+`spline_library/spline_inverter.h` and `spline_library/arclength.h` depend on Boost's Math module. If you don't want to install Boost, you can safely avoid including these two files - nothing else includes it, and nothing else relies on Boost.
 
 Both the demo and the spline_library code require a fully compliant C++14 compiler.
 
-The demo project requires Qt 5.5. To build it, either run qmake with the .pro file to generate a makefile, or open the .pro file in qt Creator.
+Demo
+-------------
+Follow these steps to run the demo (Assuming you already have Qt 5.5+ installed and working):
 
-When actually using splines in your own project, drop the spline_library directory in the root source folder. It's header-only, so from here all you need to do is import it from your own code.
+1. Install Boost. On Linux, this is in most package managers. On Mac, it can be installed via homebrew. Otherwise, visit http://www.boost.org/
+2. Create a file called `SplineDemo_Include.pri` in the root of the project
+3. In this file, paste the following, where `/path/to/boost` contains Boost's include files.
 
-`spline_library/spline_inverter.h` depends on Boost's Math module. If you don't want to install Boost and you don't need the spline inverter's functionality, you can safely avoid including `spline_library/spline_inverter.h` - nothing else includes it, and nothing else relies on Boost.
-
-There are no other third-party dependencies within the spline_library directory.
+    `INCLUDEPATH += "/path/to/boost"`
+     
+    On windows, this might be: `INCLUDEPATH += "C:\Boost\boost_1_60_0"`
+     
+    On Mac, this might be: `INCLUDEPATH += /usr/local/Cellar/boost/1.59.0/include`
+    
+4. Run qmake on `SplineDemo.pro` to generate a makefile, then build the makefile, and run the compiled executable
+5. OR, open `SplineDemo.pro` in Qt Creator and press play
 
 License
 -------------

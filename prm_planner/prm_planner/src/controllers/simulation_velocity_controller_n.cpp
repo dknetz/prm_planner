@@ -173,15 +173,6 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 	this->c_constraint->computeDifference(this->m_xPredicted, this->m_xPredictedOld, this->m_xDesiredDot);
 	this->m_xDesiredDot /= this->m_dt.toSec();
 
-	//compute null space projector
-//	m_N = m_I - m_pseudoInverse * m_jacobian;
-
-//add null space motion...
-//	m_qNullSpace.fill(0);
-
-//...joint range
-//	addNullSpaceMiddleJointRange();
-
 //...collision avoidance
 //	if (c_parameters.collisionAvoidanceUse)
 //	{
@@ -201,6 +192,16 @@ bool SimulationVelocityControllerN<Dim, Type>::update(const ros::Time& now,
 //	LOG_INFO(this->m_q.data.transpose());
 //	LOG_INFO(this->m_now.toSec());
 	cmd.data = this->m_pseudoInverse * (this->m_xDesiredDot + this->m_k * this->m_error);
+
+	//add nullspace joint range optimization if needed
+	if (this->c_parameters.optimizeJointRangeInNullspace)
+	{
+		this->m_N = this->m_I - this->m_pseudoInverse * this->m_jacobian; //compute null space projector
+		this->m_qNullSpace.fill(0);
+		this->addNullSpaceMiddleJointRange();
+		Type weight = this->computeJointRangeWeight();
+		cmd.data += weight * this->m_qNullSpaceJointRange;
+	}
 
 	if (!this->template isValidCommand(cmd, this->m_dt.toSec(), 0.04))
 	{

@@ -114,6 +114,7 @@ set(SOURCE_FILES
     src/problem_definitions/approaching_problem_definition.cpp
     
     src/robot/trajectory_validator.cpp
+    src/robot/trajectory_optimizer.cpp
     src/robot/robot.cpp
     src/robot/robot_state_publisher.cpp
     src/robot/feasibility_checker.cpp
@@ -137,11 +138,10 @@ set(SOURCE_FILES
     src/planners/prm/prm_edge.cpp
     src/planners/prm/heuristic.cpp
     
-    src/planners/database_cache/database_cached_planner.cpp
-    src/planners/database_cache/path_database.cpp
-    
     src/environment/planning_scene.cpp
     src/environment/planning_object.cpp
+    
+    src/path_database/path_database.cpp
 )
 
 set(LIBRARIES
@@ -170,21 +170,12 @@ if(BUILD_CONTROLLER_DEBUG)
     add_definitions(-DBUILD_CONTROLLER_DEBUG)
 endif()
 
-#Build libs
-#          name                    path
-#add_module(prm_astar               planners/prm)
-#add_module(rrt                     planners/rrt)
-#add_module(cached_database         planners/database_cache)
-
 add_library(prm_planner_lib ${SOURCE_FILES})
 target_link_libraries(prm_planner_lib ${LIBRARIES})
 
 #MAIN
 set(LIBRARIES_FOR_BIN
         prm_planner_lib
-#        prm_planner_cached_database_lib
-#        prm_planner_prm_astar_lib
-#        prm_planner_rrt_lib
 )
 
 #Build main
@@ -195,12 +186,6 @@ add_dependencies(prm_planner prm_planner_gencfg)
 add_executable(prm_planner_execute_path src/main_execute_path.cpp)
 target_link_libraries(prm_planner_execute_path ${LIBRARIES_FOR_BIN})
 add_dependencies(prm_planner_execute_path prm_planner_gencfg)
-
-add_executable(sample_cached_database src/planners/database_cache/main_sample_database.cpp)
-target_link_libraries(sample_cached_database ${LIBRARIES_FOR_BIN})
-
-add_executable(visualize_cached_database src/planners/database_cache/main_visualize_database.cpp)
-target_link_libraries(visualize_cached_database ${LIBRARIES_FOR_BIN})
 
 #Build new prm binary 
 add_executable(new_prm src/main_new_prm.cpp)

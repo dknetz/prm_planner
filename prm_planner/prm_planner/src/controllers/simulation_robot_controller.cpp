@@ -47,15 +47,14 @@ SimulationRobotController::SimulationRobotController(const PRMEdge* edge,
 
 SimulationRobotController::SimulationRobotController(const Eigen::Affine3d& startPose,
 		const Eigen::Affine3d& goalPose,
-		KDL::JntArray& startJointState,
+		const KDL::JntArray& startJointState,
+		const ControllerParameters& params,
 		boost::shared_ptr<Robot> robot,
 		boost::shared_ptr<ProblemDefinition> pd) :
 				m_edge(NULL),
 				m_pd(pd),
 				m_robot(robot)
 {
-	ControllerParameters params = getControllerParametersFromParameterServer(m_robot->getParameters().controllerConfig);
-
 	if (params.type == "VelocityController7DOF")
 	{
 		m_controller = new SimulationVelocityControllerN<7>(startPose, goalPose, startJointState, params, m_robot, m_pd);

@@ -295,7 +295,7 @@ bool PRMView::isBlocked(const PRMEdge* edge)
 	EdgeData& dataEdge = m_edgeData[edge->m_id];
 	NodeData& dataNode1 = m_nodeData[edge->m_node1->m_id];
 	NodeData& dataNode2 = m_nodeData[edge->m_node2->m_id];
-	return dataEdge.m_isBlocked;// || !edge->m_node1->isCollisionFree() || !edge->m_node2->isCollisionFree();
+	return dataEdge.m_isBlocked;
 }
 
 void PRMView::setIsBlocked(const PRMEdge* edge,

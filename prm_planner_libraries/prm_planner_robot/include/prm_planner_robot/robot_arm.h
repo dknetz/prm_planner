@@ -226,7 +226,7 @@ public:
 	const boost::shared_ptr<Kinematics>& getKinematics() const;
 
 protected:
-	mutable boost::recursive_mutex m_mutex;
+	mutable boost::shared_mutex m_mutex;
 
 	//hardware interfaces
 	boost::shared_ptr<prm_planner::RobotInterface> m_interface;

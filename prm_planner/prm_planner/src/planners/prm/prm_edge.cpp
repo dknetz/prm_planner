@@ -80,13 +80,11 @@ int PRMEdge::getId() const
 
 bool PRMEdge::isBlocked() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_isBlocked || !m_node1->isCollisionFree() || !m_node2->isCollisionFree();
+	return m_isBlocked;
 }
 
 void PRMEdge::setIsBlocked(bool isBlocked)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
 	m_isBlocked = isBlocked;
 }
 

@@ -20,7 +20,6 @@
 #include <prm_planner/robot/robot.h>
 #include <prm_planner_robot/trajectory.h>
 #include <prm_planner_robot/path.h>
-#include <ais_util/stop_watch.h>
 #include <fcl_wrapper/robot_model/robot_model.h>
 #include <fcl_wrapper/collision_detection/fcl_wrapper.h>
 #include <chrono>
@@ -245,6 +244,7 @@ bool PRMAStar::extractPath(AStarNode* goalNode,
 		EdgeList& blockedEdges)
 {
 	AStarNode* current = goalNode;
+	AStarNode* last = NULL;
 
 	std::vector<Path::Waypoint> waypoints;
 	std::list<AStarNode*> nodes;
@@ -259,13 +259,15 @@ bool PRMAStar::extractPath(AStarNode* goalNode,
 		w.jointPose = current->startJoints;
 
 		//store computed trajectory
-		if (current->predecessor != NULL)
-		{
-			view->getJointPath(current->edgeToThisNode, w.trajectory);
-		}
+//		if (current->predecessor != NULL)
+//		{
+			if (last != NULL)
+				view->getJointPath(last->edgeToThisNode, w.trajectory);
+//		}
 
 		waypoints.push_back(w);
 		nodes.push_front(current);
+		last = current;
 		current = current->predecessor;
 	}
 
@@ -481,7 +483,7 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 				//current robot pose
 				const PRMNode* startPRMNode = node->edgeToThisNode->getOtherNode(node->node->getId());
 
-				controllable = view->updateEdge(node->edgeToThisNode, 400, predictedJointPose, startPRMNode, node->startJoints, cd, 0.2);//0.08 0.01s = 70 iterations notebook
+				controllable = view->updateEdge(node->edgeToThisNode, 1000, predictedJointPose, startPRMNode, node->startJoints, cd, 0.01);//0.08 0.01s = 70 iterations notebook
 
 				if (!controllable)
 				{
@@ -512,12 +514,6 @@ bool PRMAStar::plan(const KDL::JntArray& currentJointPose,
 			}
 
 			closedList[node->id] = node;
-
-			//EARLIER?????
-			if (!node->node->isCollisionFree())
-			{
-				continue;
-			}
 
 			if ((goalNode == NULL && node->node->getType() == PRMNode::GoalNode)
 					|| (goalNode != NULL && *node->node == *goalNode))

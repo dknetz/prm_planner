@@ -9,7 +9,18 @@
 
 #ifdef FOUND_IIWA_FRI
 
+#ifdef FOUND_VREP
 #include <vrep_interface/v_rep_iiwa.h>
+#else
+#define IIWA_1_JOINT "iiwa_1_joint"
+#define IIWA_2_JOINT "iiwa_2_joint"
+#define IIWA_3_JOINT "iiwa_3_joint"
+#define IIWA_4_JOINT "iiwa_4_joint"
+#define IIWA_5_JOINT "iiwa_5_joint"
+#define IIWA_6_JOINT "iiwa_6_joint"
+#define IIWA_7_JOINT "iiwa_7_joint"
+#endif
+
 #include <kuka_iiwa_robot/iiwa_robot_interface.h>
 
 #include <ais_log/log.h>
@@ -45,6 +56,8 @@ bool IiwaRobotInterface::start()
 	m_clientApplication = new fri::ClientApplication(*m_udpConnection, *m_client);
 	m_clientApplication->connect(IIWA_PORT, IIWA_IP);
 	m_thread = boost::thread(boost::bind(&IiwaRobotInterface::run, this));
+
+	return false;
 }
 
 bool IiwaRobotInterface::read(const ros::Time time,

@@ -60,6 +60,8 @@ protected:
 	 */
 	virtual void runPathUpdater();
 
+	void writeFile();
+
 protected:
 	boost::thread m_threadController, m_threadPathUpdater;
 	Controller* m_controller;

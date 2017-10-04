@@ -353,6 +353,11 @@ inline int ais_point_cloud::KdTree<PointType, DataType, Metric>::knnSearch(const
 {
 	boost::recursive_mutex::scoped_lock lock(m_mutex);
 
+	if (flannIndex == NULL)
+	{
+		return 0;
+	}
+
 	if (flannIndex->size() < nn)
 	{
 		return 0;

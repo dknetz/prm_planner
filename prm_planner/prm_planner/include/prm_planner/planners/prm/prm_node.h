@@ -12,7 +12,7 @@
 
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <prm_planner_robot/defines.h>
 #include <Eigen/Geometry>
 
@@ -62,14 +62,6 @@ public:
 	const int getId() const;
 
 	/**
-	 * Returns true, if the node is in collision with
-	 * the environment. Its state is updated by
-	 * updateVisibilities from PRM.
-	 */
-	bool isCollisionFree() const;
-	void setCollisionFree(bool collsionFree);
-
-	/**
 	 * Returns the type. The PRM can have several
 	 * multiple start and goal nodes.
 	 */
@@ -87,8 +79,7 @@ private:
 	std::vector<PRMEdge*> m_edges;
 	Eigen::Affine3d m_pose;
 	int m_id;
-	bool m_collisionFree;
-	mutable boost::recursive_mutex m_mutex;
+	mutable boost::shared_mutex m_mutex;
 
 	Type m_type;
 

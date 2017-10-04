@@ -18,6 +18,11 @@
 #include <chrono>
 #include <random>
 
+#define ROBOT_ARM_READ_LOCK() boost::shared_lock<boost::shared_mutex> lock(m_mutex)
+#define ROBOT_ARM_WRITE_LOCK() boost::unique_lock< boost::shared_mutex > lock(m_mutex)
+#define ROBOT_ARM_UPGRADABLE_LOCK() boost::upgrade_lock<boost::shared_mutex> lock(m_mutex)
+#define ROBOT_ARM_UPGRADE_LOCK() boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLock(m_mutex)
+
 namespace prm_planner
 {
 
@@ -185,18 +190,19 @@ void RobotArm::getChainJoints(std::vector<urdf::Joint>& out)
 
 KDL::JntArray RobotArm::getKDLChainJointState() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_READ_LOCK();
 	return m_chainPositions;
 }
 
 std::unordered_map<std::string, double> RobotArm::getAllJointStates() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_READ_LOCK();
 	return m_allPositions;
 }
 
 KDL::JntArray RobotArm::getKDLChainVelocities() const
 {
+	ROBOT_ARM_READ_LOCK();
 	return m_chainVelocities;
 }
 
@@ -210,7 +216,7 @@ void RobotArm::receiveData(const ros::Time& time,
 		//set data
 		RobotInterface::Data& data = m_interface->m_data;
 
-		boost::recursive_mutex::scoped_lock lock(m_mutex);
+		ROBOT_ARM_WRITE_LOCK();
 
 		//get all joint states
 		for (auto& it : data)
@@ -251,7 +257,7 @@ void RobotArm::receiveJointState(const sensor_msgs::JointStateConstPtr& jointSta
 		return;
 
 	//Create a mapping between name and id of the message
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_WRITE_LOCK();
 	for (size_t i = 0; i < jointState->name.size(); ++i)
 	{
 		n = jointState->name[i];
@@ -433,6 +439,7 @@ const std::string& RobotArm::getRootFrame() const
 
 const std::string& RobotArm::getTipLink() const
 {
+	ROBOT_ARM_READ_LOCK();
 	return m_tipLink;
 }
 
@@ -495,7 +502,7 @@ bool RobotArm::waitForData()
 
 void RobotArm::setToolCenterPointTransformation(const Eigen::Affine3d& tcp)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_WRITE_LOCK();
 
 	Eigen::Vector3d translation = tcp.translation();
 	Eigen::Quaterniond rotation(tcp.linear());
@@ -570,19 +577,19 @@ void RobotArm::setPassiveMode(const bool passive)
 
 void RobotArm::setChainJointState(const KDL::JntArray& joints)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_WRITE_LOCK();
 	m_chainPositions = joints;
 }
 
 Eigen::Affine3d RobotArm::getTcp() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_READ_LOCK();
 	return m_tcp;
 }
 
 bool RobotArm::isUseTcp() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	ROBOT_ARM_READ_LOCK();
 	return m_useTCP;
 }
 

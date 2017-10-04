@@ -33,6 +33,11 @@
 #include <octomap/OcTree.h>
 #include <prm_planner/util/parameter_server.h>
 
+#define PRM_READ_LOCK() boost::shared_lock<boost::shared_mutex> lock(m_mutex)
+#define PRM_WRITE_LOCK() boost::unique_lock< boost::shared_mutex > lock(m_mutex)
+#define PRM_UPGRADABLE_LOCK() boost::upgrade_lock<boost::shared_mutex> lock(m_mutex)
+#define PRM_UPGRADE_LOCK() boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLock(m_mutex)
+
 namespace prm_planner
 {
 
@@ -79,7 +84,7 @@ PRM::~PRM()
 
 void PRM::update(const boost::shared_ptr<octomap::OcTree> octree)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_WRITE_LOCK();
 
 	m_octomap = octree;
 
@@ -123,7 +128,6 @@ void PRM::connectNodes()
 
 	ais_util::ProgressBar progress("prm update", numberOfEdges);
 
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
 //#	pragma omp parallel
 //#	pragma omp single nowait
 	{
@@ -179,7 +183,7 @@ void PRM::publish()
 	//prm
 	if (m_pubMarker.getNumSubscribers() > 0)
 	{
-		boost::recursive_mutex::scoped_lock lock(m_mutex);
+		PRM_READ_LOCK();
 
 		visualization_msgs::MarkerArray markers;
 
@@ -347,7 +351,7 @@ void PRM::publish()
 
 PRMView* PRM::getShallowDataCopy()
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_READ_LOCK();
 
 	PRMView* data = new PRMView(m_nextIdNode, m_nextIdEdge);
 
@@ -463,7 +467,7 @@ PRM* PRM::load(const parameters::PRMConfig& config,
 
 void PRM::save(const std::string& filename)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_READ_LOCK();
 
 	LOG_INFO("Saving PRM");
 
@@ -552,8 +556,6 @@ void PRM::init()
 
 void PRM::cleanUpPRM()
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-
 	for (auto it = m_nodes.begin(); it != m_nodes.end();)
 	{
 		PRMNode* node = (*it).second;
@@ -604,7 +606,7 @@ void PRM::updateVisibilities()
 
 void PRM::setConstraint(boost::shared_ptr<Constraint> constraint)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_WRITE_LOCK();
 	for (auto& it : m_nodes)
 	{
 		Eigen::Affine3d pose = it.second->getPose();
@@ -617,7 +619,7 @@ void PRM::setConstraint(boost::shared_ptr<Constraint> constraint)
 void PRM::computeCenterAndRadius(double& radius,
 		Eigen::Vector3d& center) const
 		{
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_READ_LOCK();
 	double norm;
 	center.setZero();
 	radius = 0;
@@ -657,7 +659,7 @@ const PRMNodeMap& PRM::getGoalNodes() const
 void PRM::resetNodesAndEdges(PRMNodeMap nodes,
 		PRMEdgeMap edges)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_WRITE_LOCK();
 
 	DELETE_MAP(m_nodes);
 	DELETE_MAP(m_edges);

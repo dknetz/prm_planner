@@ -129,7 +129,7 @@ private:
 	PRMEdgeMap m_edges;
 	ros::Publisher m_pubMarker;
 	bool m_initialized;
-	mutable boost::recursive_mutex m_mutex;
+	mutable boost::shared_mutex m_mutex;
 	boost::shared_ptr<octomap::OcTree> m_octomap;
 
 	boost::shared_ptr<ProblemDefinition> m_pd;

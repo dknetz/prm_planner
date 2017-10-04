@@ -22,13 +22,6 @@ inline ControllerParameters getControllerParametersFromParameterServer(const std
 	parameters::ControllerConfig config = ParameterServer::controllerConfigs[controllerName];
 
 	params.type = config.controllerType;
-	params.collisionAvoidanceDistance1 = config.collisionAvoidanceDistance1;
-	params.collisionAvoidanceDistance2 = config.collisionAvoidanceDistance2;
-	params.collisionAvoidanceMaxJointVel = config.collisionAvoidanceMaxJointVel;
-	params.collisionAvoidanceUse = config.collisionAvoidanceUse;
-	params.collisionAvoidanceRatioDoCollisionChecks = config.collisionAvoidanceRatioDoCollisionChecks;
-	params.collisionAvoidanceVel0 = config.collisionAvoidanceVel0;
-	params.collisionDetectionStopDistance = 0.07;
 	params.debug = config.debug;
 	params.frequency = config.frequency;
 	params.k = config.k;
@@ -40,8 +33,20 @@ inline ControllerParameters getControllerParametersFromParameterServer(const std
 	params.maxVelocity = config.maxVelocity;
 	params.thresholdGoalReachedAng = config.goalReachedDistAng;
 	params.thresholdGoalReachedPos = config.goalReachedDistPos;
+
+	//joint range optimization in nullspace
+	params.optimizeJointRangeInNullspace = false;
 	params.jointRangeNullspaceWeightDefault = config.jointRangeWeightDefault;
 	params.jointRangeNullspaceWeightStd = config.jointRangeWeightStd;
+
+	//collision avoidance
+	params.collisionAvoidanceDistance1 = config.collisionAvoidanceDistance1;
+	params.collisionAvoidanceDistance2 = config.collisionAvoidanceDistance2;
+	params.collisionAvoidanceMaxJointVel = config.collisionAvoidanceMaxJointVel;
+	params.collisionAvoidanceUse = config.collisionAvoidanceUse;
+	params.collisionAvoidanceRatioDoCollisionChecks = config.collisionAvoidanceRatioDoCollisionChecks;
+	params.collisionAvoidanceVel0 = config.collisionAvoidanceVel0;
+	params.collisionDetectionStopDistance = 0.07;
 
 	return params;
 }

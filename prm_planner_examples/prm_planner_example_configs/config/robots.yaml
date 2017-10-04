@@ -51,8 +51,8 @@ controller_configs:
         least_square_lambda_max: 0.04
         least_square_epsilon: 0.04
         debug: false
-        goal_dist_pos: 0.015
-        goal_dist_ang: 0.02
+        goal_dist_pos: 0.0005
+        goal_dist_ang: 0.001
         collision_avoidance:
             use: false
             vel_0: 3.0

@@ -51,6 +51,8 @@ std::ostream& operator<<(std::ostream& stream,
 std::ostream& operator<<(std::ostream& stream,
 		const std::unordered_map<std::string, int>& data);
 std::ostream& operator<<(std::ostream& stream,
+		const std::unordered_map<std::string, long unsigned int>& data);
+std::ostream& operator<<(std::ostream& stream,
 		const std::map<std::string, double>& data);
 std::ostream& operator<<(std::ostream& stream,
 		const std::map<std::string, int>& data);
@@ -58,6 +60,8 @@ std::ostream& operator<<(std::ostream& stream,
 		const std::vector<std::string>& data);
 std::ostream& operator<<(std::ostream& stream,
 		const std::vector<int>& data);
+std::ostream& operator<<(std::ostream& stream,
+		const std::vector<long unsigned int>& data);
 std::ostream& operator<<(std::ostream& stream,
 		const std::vector<double>& data);
 

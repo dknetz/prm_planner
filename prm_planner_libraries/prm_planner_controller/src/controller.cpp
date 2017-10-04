@@ -61,10 +61,6 @@ fcl_robot_model::RobotState Controller::getCurrentRobotState()
 	return m_robotState;
 }
 
-//void Controller::setKdTree(boost::shared_ptr<ais_point_cloud::EasyKDTree> kdtree)
-//{
-//}
-
 void Controller::publish()
 {
 }
@@ -86,6 +82,11 @@ const ArmJointPath& Controller::getJointPositions() const
 
 void Controller::init()
 {
+}
+
+bool Controller::writeData(const std::string& baseFileName)
+{
+	return true;
 }
 
 } /* namespace prm_planner */

@@ -9,6 +9,7 @@
 
 		<node name="joint_state_publisher" pkg="extended_joint_state_publisher" type="joint_state_publisher">
 			<param name="use_gui" type="bool" value="true" />
+			<param name="rate" type="int" value="60" />
 			<rosparam param="joints_to_publish">["sdh2_thumb_3_joint", "sdh2_thumb_2_joint", "sdh2_thumb_1_joint", "sdh2_finger_23_joint", "sdh2_finger_22_joint", "sdh2_finger_21_joint", "sdh2_finger_13_joint", "sdh2_finger_12_joint", "sdh2_knuckle_joint"]</rosparam>
 		</node>
 

@@ -12,6 +12,11 @@
 #include <prm_planner/planners/prm/prm_edge.h>
 #include <prm_planner/planners/prm/prm_node.h>
 
+#define PRM_NODE_READ_LOCK() boost::shared_lock<boost::shared_mutex> lock(m_mutex)
+#define PRM_NODE_WRITE_LOCK() boost::unique_lock< boost::shared_mutex > lock(m_mutex)
+#define PRM_NODE_UPGRADABLE_LOCK() boost::upgrade_lock<boost::shared_mutex> lock(m_mutex)
+#define PRM_NODE_UPGRADE_LOCK() boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLock(m_mutex)
+
 namespace prm_planner
 {
 
@@ -19,7 +24,6 @@ PRMNode::PRMNode(const Eigen::Affine3d& pose,
 		boost::atomic_int& nodeCounter,
 		PRMNode::Type type) :
 				m_pose(pose),
-				m_collisionFree(true),
 				m_type(type)
 {
 	++nodeCounter;
@@ -30,7 +34,6 @@ PRMNode::PRMNode(const int id,
 		boost::atomic_int& nodeCounter,
 		PRMNode::Type type) :
 				m_id(id),
-				m_collisionFree(true),
 				m_type(type)
 {
 	++nodeCounter;
@@ -43,31 +46,31 @@ PRMNode::~PRMNode()
 
 const Eigen::Affine3d PRMNode::getPose() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_NODE_READ_LOCK();
 	return m_pose;
 }
 
 void PRMNode::setPose(const Eigen::Affine3d& pose)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_NODE_WRITE_LOCK();
 	m_pose = pose;
 }
 
 const Eigen::Vector3d PRMNode::getPosition() const
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_NODE_READ_LOCK();
 	return m_pose.translation();
 }
 
 void PRMNode::addEdge(PRMEdge* edge)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_NODE_WRITE_LOCK();
 	m_edges.push_back(edge);
 }
 
 void PRMNode::removeEdge(PRMEdge* edge)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
+	PRM_NODE_WRITE_LOCK();
 	for (auto it = m_edges.begin(); it != m_edges.end(); ++it)
 	{
 		if (*(*it) == *edge)
@@ -86,18 +89,6 @@ bool PRMNode::operator ==(const PRMNode& b) const
 const int PRMNode::getId() const
 {
 	return m_id;
-}
-
-bool PRMNode::isCollisionFree() const
-{
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_collisionFree;
-}
-
-void PRMNode::setCollisionFree(bool collisionFree)
-{
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	m_collisionFree = collisionFree;
 }
 
 PRMNode::Type PRMNode::getType() const

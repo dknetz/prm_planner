@@ -12,6 +12,7 @@
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
+#include <kdl/jntarray.hpp>
 #include <Eigen/Geometry>
 #include <unordered_map>
 
@@ -70,6 +71,8 @@ public:
 
 	virtual void init() = 0;
 	virtual void reset() = 0;
+
+	virtual bool writeTrajectory(const std::string& filename);
 
 	/**
 	 * Set/Get
@@ -157,6 +160,9 @@ protected:
 
 	bool m_savePath;
 	std::string m_pathFileName;
+
+	mutable boost::recursive_mutex m_executedTrajectoryMutex;
+	std::vector<KDL::JntArray> m_executedTrajectory;
 };
 
 }

@@ -46,6 +46,7 @@ private:
 	boost::shared_ptr<KDL::ChainIkSolverVel> m_ikVelSolver;
 	boost::shared_ptr<KDL::ChainFkSolverPos_recursive> m_fkSolver;
 	boost::shared_ptr<KDL::ChainJntToJacSolver> m_jacobianSolver;
+	KDL::Chain m_chain;
 };
 
 } /* namespace prm_kinematics_kdl */

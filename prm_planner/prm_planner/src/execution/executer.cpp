@@ -74,10 +74,10 @@ void Executer::splitPath(const boost::shared_ptr<Path>& path,
 //			//we only have one waypoint for specials
 //			if (it.type != Path::Waypoint::RobotWaypoint)
 //			{
-				splittedPath.push_back(subpath);
+			splittedPath.push_back(subpath);
 
-				//new sub path for the next waypoints
-				subpath.reset(new Path(path->c_frame));
+			//new sub path for the next waypoints
+			subpath.reset(new Path(path->c_frame));
 //			}
 
 //			oldVel = vel;
@@ -104,7 +104,7 @@ bool Executer::executePath(const boost::shared_ptr<Path> path)
 	LOG_DEBUG("path size: " << path->size());
 
 	//make dense path (important for e.g., constraints)
-	path->makeDense(0.03);
+//	path->makeDense(0.03);
 
 	path->publish();
 
@@ -279,6 +279,32 @@ void Executer::setSavePath(bool savePath)
 	m_savePath = savePath;
 }
 
+bool Executer::writeTrajectory(const std::string& filename)
+{
+	std::ofstream file(filename);
+
+	if (!file.is_open())
+	{
+		LOG_ERROR("cannot write to " << filename);
+		return false;
+	}
+
+	for (auto& it : m_executedTrajectory)
+	{
+		for (int i = 0; i < it.rows(); ++i)
+		{
+			file << it.data(i);
+			if (i < it.data.rows() - 1)
+				file << ", ";
+		}
+		file << "\n";
+	}
+
+	file.flush();
+	return true;
 }
+
+}
+
 /* namespace prm_planner */
 

@@ -26,6 +26,7 @@ RobotExecuter::RobotExecuter()
 	boost::shared_ptr<Constraint> constraint = pdm->getConstraint();
 
 	ControllerParameters params = getControllerParametersFromParameterServer(m_robot->getParameters().controllerConfig);
+//	params.optimizeJointRangeInNullspace = true;
 
 	if (params.type == "VelocityController7DOF")
 	{
@@ -135,8 +136,18 @@ void RobotExecuter::runController()
 		Controller::getTime(now);
 		dt = now - last;
 
-		LOG_ERROR_COND(m_controller == NULL, "Controller is NULL!!!!");
-		m_controller->update(now, dt);
+		if (m_controller->update(now, dt)) //returns true on error
+		{
+			m_executedTrajectoryMutex.lock();
+			writeFile();
+			m_executedTrajectoryMutex.unlock();
+		}
+		else
+		{
+			m_executedTrajectoryMutex.lock();
+			m_executedTrajectory.push_back(m_controller->getCurrentJointPosition());
+			m_executedTrajectoryMutex.unlock();
+		}
 
 		r.sleep();
 	}
@@ -167,6 +178,8 @@ void RobotExecuter::runPathUpdater()
 			//i.e., m_currentPathSegment is 0
 			if (finished || m_currentPathSegment == 0)
 			{
+				writeFile();
+
 				m_mutex.lock();
 				SubPath pathSegments = m_pathSegments;
 				auto& path = pathSegments[m_currentPathSegment];
@@ -202,6 +215,21 @@ void RobotExecuter::runPathUpdater()
 		r.sleep();
 
 	}
+}
+
+void RobotExecuter::writeFile()
+{
+	m_executedTrajectoryMutex.lock();
+	static int k = 0;
+	if (m_executedTrajectory.empty())
+	{
+		return;
+	}
+	LOG_INFO("Writing executed trajectory with id " << k);
+	writeTrajectory(std::string("/tmp/exec_traj_") + std::to_string(k) + ".traj");
+	m_controller->writeData(std::string("/tmp/exec_controller_") + std::to_string(k++));
+	m_executedTrajectory.clear();
+	m_executedTrajectoryMutex.unlock();
 }
 
 } /* namespace prm_planner */

@@ -48,6 +48,7 @@ FORWARD_DECLARE(InteractiveMarker);
 FORWARD_DECLARE(GraspableObject);
 FORWARD_DECLARE(DroppingRegion);
 FORWARD_DECLARE(PlanningScene);
+FORWARD_DECLARE(PathDatabase);
 
 /**
  * The Problem definition class specifies the complete
@@ -284,6 +285,7 @@ protected:
 
 	//the planner interface
 	boost::shared_ptr<PRMPlanner> m_plannerInterface;
+	boost::shared_ptr<PathDatabase> m_pathDatabase;
 
 	//the current task motion planner (e.g., PRMAStar or RRT)
 	//it is used for all task related planner queries. If you

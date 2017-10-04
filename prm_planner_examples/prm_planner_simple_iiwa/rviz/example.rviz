@@ -197,7 +197,7 @@ Visualization Manager:
     - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -208,7 +208,7 @@ Visualization Manager:
       Robot Description: /prm_planner/prm_planner/iiwa/robot_description_trajectory
       TF Prefix: iiwa
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
@@ -283,15 +283,15 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.112876
-        Y: -0.0155726
-        Z: -0.12796
+        X: 0.0498448
+        Y: 0.118785
+        Z: 0.224912
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.775398
+      Pitch: 0.205398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.26358
+      Yaw: 6.20358
     Saved: ~
 Window Geometry:
   Displays:

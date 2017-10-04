@@ -13,11 +13,11 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/frames.hpp>
 #include <prm_planner_robot/kinematics.h>
-#include <prm_planner_robot/path.h>
 #include <prm_planner_robot/trajectory.h>
 #include <iostream>
 #include <fstream>
-#include <spline_library/hermite/cubic/cubic_hermite_spline.h>
+#include <spline_library/splines/cubic_hermite_spline.h>
+#include <spline_library/splines/quintic_hermite_spline.h>
 
 //#include <ais_log/data_logger.h>
 
@@ -35,14 +35,14 @@ Trajectory::Trajectory(const boost::shared_ptr<Path>& path,
 		const double maxVelocityAngular,
 		const ros::Time& now,
 		const std::string frame) :
-				m_path(path),
+				m_waypoints(path->getWaypoints()),
 				m_startVelocity(startVelocity),
 				c_maxVelocityLinear(maxVelocityLinear),
 				c_maxVelocityAngular(maxVelocityAngular),
 				m_start(now),
 				c_frame(frame)
 {
-	if (m_path->size() < 2)
+	if (m_waypoints.size() < 2)
 	{
 		LOG_ERROR("path has less than 2 waypoints!");
 		return;
@@ -50,42 +50,23 @@ Trajectory::Trajectory(const boost::shared_ptr<Path>& path,
 
 	initializeSpline();
 
-//	LOG_INFO("DEBUG TRUE")
-//	if (m_path->m_debug)
-//	{
-//		static int counter = 0;
-//		if (counter != 0)
-//			DATA_LOGGER_CLOSE("spline_" + std::to_string(counter - 1));
-//
-//		std::string name = "spline_" + std::to_string(counter++);
-//		DATA_LOGGER_ADD(name, "/tmp/" + name + ".data");
-//
-//		float length = m_spline.spline->getMaxT();
-//
-//		for (float i = 0; i < length; i += (length / 1000.0))
-//		{
-//			Spline<Vector3>::InterpolatedPT tang = m_spline.spline->getTangent(i);
-//			DATA_LOGGER_WRITE(name)
-//			<< i << tang.position.length() << tang.tangent.length();
-//		}
-//	}
-
 	//compute time
-	Eigen::Affine3d& pose0 = m_path->operator [](0).pose;
+	const Eigen::Affine3d& pose0 = m_waypoints[0].pose;
 	Eigen::Quaterniond qOld(pose0.rotation());
 	Eigen::Vector3d pOld(pose0.translation());
 	double angularDiff, transDiff;
 	double angularVel, transVel;
+	const size_t waypointsSize = m_waypoints.size();
 	m_predictedExecutionTime = 0;
-	m_waypointInfos.resize(m_path->size());
+	m_waypointInfos.resize(waypointsSize);
 	m_waypointInfos[0].startTime = 0;
 	m_waypointInfos[0].progress = 0;
 	m_waypointInfos[0].distToStart = 0;
 	double sumPathLength = 0;
-	for (size_t i = 1; i < m_path->size(); ++i)
+	for (size_t i = 1; i < waypointsSize; ++i)
 	{
-		Path::Waypoint& wpOld = m_path->operator [](i - 1);
-		Eigen::Affine3d& poseI = m_path->operator [](i).pose;
+		const Path::Waypoint& wpOld = m_waypoints[i - 1];
+		const Eigen::Affine3d& poseI = m_waypoints[i].pose;
 		Eigen::Quaterniond qCurrent(poseI.rotation());
 		Eigen::Vector3d pCurrent(poseI.translation());
 		angularDiff = qOld.angularDistance(qCurrent);
@@ -105,13 +86,31 @@ Trajectory::Trajectory(const boost::shared_ptr<Path>& path,
 	}
 
 	//compute progress
-	for (size_t i = 1; i < m_path->size(); ++i)
+	for (size_t i = 1; i < waypointsSize; ++i)
 	{
 		m_waypointInfos[i].progress = m_waypointInfos[i].distToStart / sumPathLength;
 	}
 
 //	double posDiff = m_spline.spline->totalLength();
 //	m_predictedExecutionTime = std::max<double>(angleDiff / c_maxVelocityAngular, posDiff / c_maxVelocityLinear);
+}
+
+Trajectory::Trajectory(const std::vector<Path::Waypoint>& waypoints) :
+				m_waypoints(waypoints),
+				m_startVelocity(Vector6d::Zero()),
+				c_maxVelocityLinear(1),
+				c_maxVelocityAngular(1),
+				m_start(ros::Time(0)),
+				c_frame("no_frame"),
+				m_predictedExecutionTime(0)
+{
+	if (m_waypoints.size() < 2)
+	{
+		LOG_ERROR("path has less than 2 waypoints!");
+		return;
+	}
+
+	initializeSpline();
 }
 
 Trajectory::~Trajectory()
@@ -252,9 +251,9 @@ bool Trajectory::getPose(const ros::Time& now,
 	{
 		Eigen::Vector3d posTraj = pose.x.head(3);
 		double min = std::numeric_limits<double>::max();
-		for (size_t i = 1; i < m_path->size() - 1; ++i)
+		for (size_t i = 1; i < m_waypoints.size() - 1; ++i)
 		{
-			Path::Waypoint& current = (*m_path)[i];
+			const Path::Waypoint& current = m_waypoints[i];
 			Eigen::Vector3d posCurrent = current.pose.translation();
 			double dist = (posCurrent - posTraj).squaredNorm();
 
@@ -302,24 +301,21 @@ bool Trajectory::getPoseFromT(const double& t,
 	{
 		int index = (int) t;
 		pos = m_spline.spline->getPosition(t);
-		Eigen::Quaterniond q1(m_path->operator [](index).pose.rotation());
-		Eigen::Quaterniond q2(m_path->operator [](index + 1).pose.rotation());
-//		LOG_INFO(q1.x() << " " << q1.y() << " " << q1.z() << " " << q1.w());
-//		LOG_INFO(q2.x() << " " << q2.y() << " " << q2.z() << " " << q2.w());
-//		LOG_INFO(index);
-//		LOG_INFO(t);
+		Eigen::Quaterniond q1(m_waypoints[index].pose.rotation());
+		Eigen::Quaterniond q2(m_waypoints[index + 1].pose.rotation());
 		pose.quaternion = q1.slerp(t - index, q2);
 
 //		LOG_INFO(pose.quaternion.x() << " " << pose.quaternion.y() << " " << pose.quaternion.z() << " " << pose.quaternion.w());
 	}
 	else if (t == m_spline.spline->getMaxT())
 	{
-		pos = m_spline.spline->getPosition(t);
-		pose.quaternion = Eigen::Quaterniond(m_path->operator []((int) t).pose.rotation());
+		//it's not possible to use tMax? (same knots in spline lib at the end? had no time to debug)
+		pos = m_spline.spline->getPosition(t - 0.000001);
+		pose.quaternion = Eigen::Quaterniond(m_waypoints.back().pose.rotation());
 	}
 	else
 	{
-		for (auto& it : *m_path)
+		for (auto& it : m_waypoints)
 		{
 			LOG_INFO(it.pose.translation());
 		}
@@ -341,6 +337,11 @@ nav_msgs::PathConstPtr Trajectory::getRosTrajectory()
 {
 	if (m_rosTrajectory.get() == NULL)
 	{
+		if (c_frame == "no_frame")
+		{
+			LOG_WARNING("You might not be able to visualize the trajectory because frame name is 'no_frame'");
+		}
+
 		Vector3 pos;
 		ros::Time time = ros::Time::now();
 		int i = 0;
@@ -374,10 +375,14 @@ void Trajectory::initializeSpline()
 	Eigen::Vector3d p1, p2;
 	Eigen::Vector3d dir1;
 
-	std::vector<Vector3> ps(m_path->size()), ts(m_path->size());
+	const size_t waypointsSize = m_waypoints.size();
 
-	p1 = m_path->operator [](0).getTaskPosition();
-	p2 = m_path->operator [](1).getTaskPosition();
+	std::vector<Vector3> ps(waypointsSize), ts(waypointsSize);
+
+	p1 = m_waypoints[0].getTaskPosition();
+	p2 = m_waypoints[1].getTaskPosition();
+
+	dir1 = (p2 - p1) / 2.0; // /2 wiki
 	p1s[0] = p1.x();
 	p1s[1] = p1.y();
 	p1s[2] = p1.z();
@@ -386,19 +391,21 @@ void Trajectory::initializeSpline()
 	p2s[2] = p2.z();
 
 	ps[0] = p1s;
-	ts[0][0] = m_startVelocity.x();
-	ts[0][1] = m_startVelocity.y();
-	ts[0][2] = m_startVelocity.z();
+//	ts[0][0] = m_startVelocity.x();
+//	ts[0][1] = m_startVelocity.y();
+//	ts[0][2] = m_startVelocity.z();
+	ts[0][0] = dir1.x();
+	ts[0][1] = dir1.y();
+	ts[0][2] = dir1.z();
 
-//	LOG_INFO(m_path->size());
-//	LOG_INFO(p1.transpose() << " " << p2.transpose());
-
-	if (m_path->size() == 2)
+	if (waypointsSize == 2)
 	{
 		ps[1] = p2s;
-		ts[1] = Vector3( { 0, 0, 0 });
+		ts[1][0] = dir1.x();
+		ts[1][1] = dir1.y();
+		ts[1][2] = dir1.z();
 
-		m_spline.spline.reset(new CubicHermiteSpline<Vector3>(ps, ts));
+		m_spline.spline.reset(new CubicHermiteSpline<Vector3>(ps, ts, 0.5));
 		m_spline.length = m_spline.spline->totalLength();
 
 		if (!isValid())
@@ -421,28 +428,21 @@ void Trajectory::initializeSpline()
 		Vector3 p3s;
 
 		Eigen::Vector3d p3;
-		Eigen::Vector3d dir2, angleBisector, cross, tangent;
+		Eigen::Vector3d tangent;
 		double maxLinVel;
 
 		std::vector<Vector3> points(2);
 		size_t i = 1;
-		for (; i < m_path->size() - 1; ++i)
+		for (; i < waypointsSize - 1; ++i)
 		{
-			double wpVel = m_path->operator [](i).maxTranslationalVel;
+			double wpVel = m_waypoints[i].maxTranslationalVel;
 			maxLinVel = wpVel <= 0 ? c_maxVelocityLinear : wpVel;
-			p3 = m_path->operator [](i + 1).getTaskPosition();
+			p3 = m_waypoints[i + 1].getTaskPosition();
 			p3s[0] = p3.x();
 			p3s[1] = p3.y();
 			p3s[2] = p3.z();
 
-			//compute tangent
-			dir1 = p2 - p1;
-			dir2 = p3 - p2;
-//			angleBisector = (dir1.normalized() + dir2.normalized()).normalized();
-//			cross = dir1.cross(dir2);
-//			tangent = cross.cross(angleBisector);
-			tangent = dir1 + dir2;
-			tangent = tangent.normalized() * maxLinVel;
+			tangent = ((p3 - p1) / 2);
 
 			ps[i] = p2s;
 			ts[i][0] = tangent.x();
@@ -459,8 +459,9 @@ void Trajectory::initializeSpline()
 		//create final spline, tangent of goal is in the direction of second last
 		//point to last point
 		ps[i] = p3s;
-		ts[i] = Vector3( { 0, 0, 0 });
-		m_spline.spline.reset(new CubicHermiteSpline<Vector3>(ps, ts));
+		ts[i] = (p3s - p2s) * 0.5f;
+
+		m_spline.spline.reset(new CubicHermiteSpline<Vector3>(ps, ts, 0.5));
 		m_spline.length = m_spline.spline->totalLength();
 
 		if (!isValid())
@@ -483,7 +484,7 @@ void Trajectory::initializeSpline()
 bool Trajectory::isValid()
 {
 	//don't know why maxT can get nan...
-	return m_path->size() == 1 || (m_spline.spline.get() != NULL && !std::isnan(m_spline.spline->getMaxT()));
+	return m_waypoints.size() == 1 || (m_spline.spline.get() != NULL && !std::isnan(m_spline.spline->getMaxT()));
 }
 
 void Trajectory::computeSmoothFirstDerivative(const double t,
@@ -527,10 +528,10 @@ void Trajectory::setNow(const ros::Time& now)
 void Trajectory::writeGnuplotFile(const std::string& file)
 {
 	std::ofstream f(file);
-	for (double t = 0.000; t <= 1.0; t += 0.001)
+	for (double t = 0.000; t <= m_spline.spline->getMaxT(); t += 0.001)
 	{
 		Spline<Vector3>::InterpolatedPT v = m_spline.spline->getTangent(t);
-		f << t << " " << v.position.length() << " " << v.tangent.length() << "\n";
+		f << t << ", " << v.position[0] << ", " << v.position[1] << ", " << v.position[2] << ", " << v.tangent[0] << ", " << v.tangent[1] << ", " << v.tangent[2] << "\n";
 	}
 	f.close();
 }

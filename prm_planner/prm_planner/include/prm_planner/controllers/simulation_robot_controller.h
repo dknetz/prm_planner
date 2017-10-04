@@ -13,6 +13,7 @@
 #include <kdl/jntarray.hpp>
 #include <prm_planner/util/defines.h>
 #include <prm_planner_controller/controller.h>
+#include <prm_planner_controller/controller_defines.h>
 #include <prm_planner_robot/defines.h>
 #include <Eigen/Geometry>
 
@@ -44,7 +45,8 @@ public:
 	 */
 	SimulationRobotController(const Eigen::Affine3d& startPose,
 			const Eigen::Affine3d& goalPose,
-			KDL::JntArray& startJointState,
+			const KDL::JntArray& startJointState,
+			const ControllerParameters& params,
 			boost::shared_ptr<Robot> robot,
 			boost::shared_ptr<ProblemDefinition> pd);
 

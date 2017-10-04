@@ -98,6 +98,18 @@ std::ostream& operator <<(std::ostream& stream,
 }
 
 std::ostream& operator <<(std::ostream& stream,
+		const std::unordered_map<std::string, long unsigned int>& data)
+{
+	stream << "STD: UnorderedMap [string -> long unsigned int]: \n";
+	for (auto& it : data)
+	{
+		stream << "\t- " << it.first.c_str() << "->" << it.second << "\n";
+	}
+	stream << "\n";
+	return stream;
+}
+
+std::ostream& operator <<(std::ostream& stream,
 		const std::map<std::string, double>& data)
 {
 	stream << "STD: Map [string -> double]: \n";
@@ -137,6 +149,18 @@ std::ostream& operator <<(std::ostream& stream,
 		const std::vector<int>& data)
 {
 	stream << "STD: Vector [int]: \n";
+	for (auto& it : data)
+	{
+		stream << "\t- " << it << "\n";
+	}
+	stream << "\n";
+	return stream;
+}
+
+std::ostream& operator <<(std::ostream& stream,
+		const std::vector<long unsigned int>& data)
+{
+	stream << "STD: Vector [long unsigned int]: \n";
 	for (auto& it : data)
 	{
 		stream << "\t- " << it << "\n";

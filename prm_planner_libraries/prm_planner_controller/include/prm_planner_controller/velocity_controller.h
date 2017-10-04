@@ -40,7 +40,7 @@ FORWARD_DECLARE(Kinematics);
 template<int Dim, class Type = double>
 class VelocityController: public Controller, public ControllerEigenDefines<Dim, Type>
 {
-	CONTROLLER_USE_TYPEDEFS
+CONTROLLER_USE_TYPEDEFS
 
 public:
 	VelocityController(const ControllerParameters& parameters,
@@ -52,7 +52,7 @@ public:
 
 	virtual bool updateFromPath(const boost::shared_ptr<Path> path);
 	virtual void init();
-//	virtual void setKdTree(boost::shared_ptr<ais_point_cloud::EasyKDTree> kdtree);
+	//	virtual void setKdTree(boost::shared_ptr<ais_point_cloud::EasyKDTree> kdtree);
 
 	virtual void publish();
 
@@ -80,6 +80,8 @@ public:
 	virtual Trajectory::Pose getGoalPose();
 	virtual Vector6d getDistToGoal();
 
+	virtual bool writeData(const std::string& baseFileName);
+
 protected:
 	void initController();
 	void initTime();
@@ -92,24 +94,25 @@ protected:
 	void limitFinalJointVelocities(KDL::JntArray& cmds);
 	void limitJointVelocities(VectorNd& cmd,
 			Type max);
-	void resetCollisionStrip(const KDL::JntArray& joints);
+//	void resetCollisionStrip(const KDL::JntArray& joints);
 
 	void addNullSpaceMiddleJointRange();
+	Type computeJointRangeWeight();
+
 //	void addNullSpaceCollisionAvoidance(); //Kinematic Control Algorithms for On-Line Obstacle Avoidance for Redundant Manipulators
 //	void updateObjectDistances();
-//	Type computeJointRangeWeight();
 //	bool checkCollision();
 	virtual bool isGoalReached(Trajectory::Pose& current);
 
 protected:
 	Eigen::Vector3d m_posOld;
-//	std::vector<Matrix6xN> m_jacobians;
+	//	std::vector<Matrix6xN> m_jacobians;
 	Matrix6xN m_jacobian;
 	KDL::Jacobian m_kdlJacobian;
 	mutable boost::recursive_mutex m_mutex;
 	bool m_printJointRangeWarning;
 	bool m_success;
-//	JacobianMultiSolver* m_jacobianSolver;
+	//	JacobianMultiSolver* m_jacobianSolver;
 //	boost::shared_ptr<KDL::ChainFkSolverPos_recursive> m_fkSolver;
 	boost::shared_ptr<Kinematics> m_kinematics;
 	Type m_executionLength;
@@ -150,10 +153,10 @@ protected:
 	boost::atomic_int m_currentWaypoint;
 
 	//collision bubbles
-	std::vector<ControllerBubble> m_collisionStrip;
+//	std::vector<ControllerBubble> m_collisionStrip;
 
 private:
-	static std::unordered_map<std::string, ros::Publisher> s_pubBubbles;
+//	static std::unordered_map<std::string, ros::Publisher> s_pubBubbles;
 	static std::unordered_map<std::string, ros::Publisher> s_pubTrajectory;
 
 public:

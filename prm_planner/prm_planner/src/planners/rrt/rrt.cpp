@@ -9,9 +9,11 @@
 
 #include <ais_definitions/class.h>
 #include <ais_definitions/exception.h>
+#include <boost/smart_ptr/shared_ptr.hpp>
 #include <prm_planner/collision_detection/collision_detector.h>
 #include <prm_planner/controllers/helpers.h>
 #include <prm_planner/controllers/simulation_robot_controller.h>
+#include <prm_planner/robot/robot.h>
 #include <prm_planner/problem_definitions/problem_definition_manager.h>
 #include <prm_planner/planners/rrt/rrt.h>
 #include <prm_planner/planners/rrt/rrt_node.h>
@@ -175,7 +177,8 @@ RRTNode* RRT::createNode(RRTNode* parent,
 	node->m_parent = parent;
 
 	//check controller
-	node->m_controller = new SimulationRobotController(parent->m_pose, node->m_pose, parent->m_joints, m_robot, m_pd);
+	ControllerParameters params = getControllerParametersFromParameterServer(m_robot->getParameters().controllerConfig);
+	node->m_controller = new SimulationRobotController(parent->m_pose, node->m_pose, parent->m_joints, params, m_robot, m_pd);
 	node->m_controller->setCollisionDetection(cd);
 	node->m_controllerSuccess = node->m_controller->canControl(3500, 0.1);
 
@@ -201,7 +204,8 @@ RRTNode* RRT::tryToReachGoal(const Eigen::Affine3d& goal,
 	node->m_pose = goal;
 	node->m_parent = currentNode;
 
-	node->m_controller = new SimulationRobotController(currentNode->m_pose, node->m_pose, currentNode->m_joints, m_robot, m_pd);
+	ControllerParameters params = getControllerParametersFromParameterServer(m_robot->getParameters().controllerConfig);
+	node->m_controller = new SimulationRobotController(currentNode->m_pose, node->m_pose, currentNode->m_joints, params, m_robot, m_pd);
 	node->m_controller->setCollisionDetection(cd);
 	node->m_controllerSuccess = node->m_controller->canControl(3500, 0.01);
 

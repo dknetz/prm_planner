@@ -51,6 +51,18 @@ Path::Waypoint::Waypoint(const int& id,
 {
 }
 
+Path::Waypoint::Waypoint(const int& id,
+		const Eigen::Affine3d& pose,
+		const KDL::JntArray& jointstate) :
+				type(Waypoint::RobotWaypoint),
+				id(id),
+				pose(pose),
+				jointPose(jointstate),
+				maxAngularVel(-1),
+				maxTranslationalVel(-1)
+{
+}
+
 Path::Waypoint Path::Waypoint::getOpenGripperWaypoint()
 {
 	Waypoint wp;
@@ -79,7 +91,9 @@ Path::Path(const std::string& frame) :
 				m_length(0),
 				m_lengthUpdated(false),
 				c_frame(frame),
-				m_debug(false)
+				m_debug(false),
+				m_maxId(0),
+				m_cachedPath(false)
 {
 	if (!m_pubInit)
 	{
@@ -94,7 +108,9 @@ Path::Path(const Path& other) :
 				m_length(other.m_length),
 				m_lengthUpdated(other.m_lengthUpdated),
 				c_frame(other.c_frame),
-				m_debug(false)
+				m_debug(false),
+				m_maxId(other.m_maxId),
+				m_cachedPath(other.m_cachedPath)
 {
 	if (!m_pubInit)
 	{
@@ -107,7 +123,9 @@ Path::Path(const Path& other) :
 Path::Path() :
 				m_length(0),
 				m_lengthUpdated(false),
-				m_debug(false)
+				m_debug(false),
+				m_maxId(0),
+				m_cachedPath(false)
 {
 }
 
@@ -120,6 +138,24 @@ void Path::append(const Waypoint& waypoint,
 {
 	m_lengthUpdated = false;
 	m_waypoints.push_back(waypoint);
+
+	if (waypoint.id > m_maxId)
+		m_maxId = waypoint.id;
+
+	//clean the path if requested. Otherwise
+	//you should do it by yourself
+	if (clean)
+		cleanPath();
+}
+
+void Path::prepend(const Waypoint& waypoint,
+		const bool clean)
+{
+	m_lengthUpdated = false;
+	m_waypoints.insert(m_waypoints.begin(), waypoint);
+
+	if (waypoint.id > m_maxId)
+		m_maxId = waypoint.id;
 
 	//clean the path if requested. Otherwise
 	//you should do it by yourself
@@ -136,6 +172,9 @@ void Path::append(const Path& path,
 	for (auto& it : path)
 	{
 		m_waypoints.push_back(it);
+
+		if (it.id > m_maxId)
+			m_maxId = it.id;
 	}
 
 	//clean the path if requested. Otherwise
@@ -161,6 +200,7 @@ void Path::clear()
 	m_waypoints.clear();
 	m_lengthUpdated = false;
 	m_length = 0;
+	m_maxId = 0;
 	m_rosPath.reset();
 }
 
@@ -231,6 +271,7 @@ Path& Path::operator =(const Path& other)
 	m_waypoints = other.m_waypoints;
 	m_length = other.m_length;
 	m_lengthUpdated = other.m_lengthUpdated;
+	m_maxId = other.m_maxId;
 	return *this;
 }
 
@@ -323,6 +364,7 @@ std::string Path::getFirstWaypointHelper() const
 void Path::cleanPath()
 {
 	bool lastWayPointSpecial = false;
+	m_maxId = 0;
 	for (auto it = m_waypoints.begin() + 1; it != m_waypoints.end();)
 	{
 		//we only consider 'RobotWaypoint' waypoints and
@@ -331,6 +373,10 @@ void Path::cleanPath()
 		{
 			++it;
 			lastWayPointSpecial = true;
+
+			if (it->id > m_maxId)
+				m_maxId = it->id;
+
 			continue;
 		}
 
@@ -348,11 +394,17 @@ void Path::cleanPath()
 			}
 			else
 			{
+				if (it->id > m_maxId)
+					m_maxId = it->id;
+
 				++it;
 			}
 		}
 		else
 		{
+			if (it->id > m_maxId)
+				m_maxId = it->id;
+
 			++it;
 		}
 	}
@@ -375,6 +427,65 @@ double Path::getPathLength() const
 		length += (m_waypoints[i].pose.translation() - m_waypoints[i - 1].pose.translation()).norm();
 	}
 	return length;
+}
+
+void Path::writeTrajectoryData(const std::string& filename)
+{
+	std::ofstream file(filename);
+
+	if (!file.is_open())
+	{
+		LOG_ERROR("cannot write to " << filename);
+		return;
+	}
+
+	if (isSpecialCommand())
+	{
+		return;
+	}
+
+	for (size_t w = 0; w < m_waypoints.size(); ++w)
+	{
+		Path::Waypoint& it = m_waypoints[w];
+
+		KDL::JntArray wp = it.jointPose;
+
+		//draw end point
+		if (it.trajectory.empty())
+		{
+			for (size_t j = 0; j < 2; ++j)
+				for (size_t i = 0; i < wp.data.size(); ++i)
+				{
+					file << wp.data(i);
+					if (j == 0 || i < wp.data.size() - 1)
+						file << ", ";
+				}
+			wp.data.setZero();
+			file << "\n";
+		}
+		else
+		{
+			for (auto& it2 : it.trajectory)
+			{
+				for (size_t i = 0; i < it2.positions.data.size(); ++i)
+				{
+					file << it2.positions.data(i);
+					file << ", ";
+				}
+				for (size_t i = 0; i < wp.data.size(); ++i)
+				{
+					file << wp.data(i);
+					if (i < wp.data.size() - 1)
+						file << ", ";
+				}
+				wp.data.setZero();
+				file << "\n";
+			}
+		}
+
+		file << "\n";
+		file.flush();
+	}
 }
 
 void Path::save(const std::string& filename,
@@ -403,7 +514,7 @@ void Path::save(const std::string& filename,
 	}
 }
 
-void Path::makeDense(const double distBetweenWaypoints)
+void Path::makeDense(const int numberOfJointStates)
 {
 	//do nothing if path is empty
 	if (m_waypoints.empty())
@@ -415,6 +526,11 @@ void Path::makeDense(const double distBetweenWaypoints)
 	Eigen::Affine3d p1, p2;
 	Eigen::Affine3d newPose;
 	Eigen::Vector3d pos1, pos2, pos3, diff;
+	Eigen::Quaterniond quat;
+
+	double dist = 0;
+	double distAng = 0;
+
 	Eigen::Quaterniond rot1, rot2;
 	size_t id = 0;
 	double tStart = 0;
@@ -423,8 +539,12 @@ void Path::makeDense(const double distBetweenWaypoints)
 	Waypoint wpStart = waypoints.front();
 	wpStart.id = id++;
 	m_waypoints.push_back(wpStart);
+	pos1 = wpStart.pose.translation();
+	quat = Eigen::Quaterniond(wpStart.pose.linear());
 
-	for (size_t i = 0; i < waypoints.size() - 1; ++i)
+	ArmJointPath tNew;
+
+	for (size_t i = 0; i < waypoints.size(); ++i)
 	{
 		Waypoint& wpCurrent = waypoints[i];
 
@@ -435,68 +555,178 @@ void Path::makeDense(const double distBetweenWaypoints)
 			Waypoint wp(wpCurrent);
 			wp.id = id++;
 
+			//add this waypoint to be able to reach the goal in a precise way
+			if (i > 0)
+			{
+				m_waypoints.push_back(waypoints[i - 1]);
+			}
+
 			m_waypoints.push_back(wp);
+			tNew.clear();
 		}
 		else
 		{
-			Waypoint& wpNext = waypoints[i + 1];
+//			Waypoint& wpNext = waypoints[i + 1];
+//
+//			//if the next waypoint is a special waypoint
+//			//add the current waypoint as a end point
+//			//to be able to exactly reach the sub goal
+//			if (wpNext.type != Waypoint::RobotWaypoint)
+//			{
+//				Waypoint wp(wpCurrent);
+//				wp.id = id++;
+//
+//				m_waypoints.push_back(wp);
+//			}
+//			else
+//			{
+//				p1 = wpCurrent.pose;
+//				p2 = wpNext.pose;
+//				pos1 = p1.translation();
+//				pos2 = p2.translation();
+//				rot1 = p1.rotation();
+//				rot2 = p2.rotation();
+//
+//				double t = tStart;
+//				diff = pos2 - pos1;
+//				double dist = diff.norm();
+//				diff /= dist;
+//
+//				while (t < dist)
+//				{
+//					newPose.setIdentity();
+//					newPose.translation() = pos1 + diff * t;
+//					newPose.linear() = rot1.slerp(t / dist, rot2).matrix();
+//					t += distBetweenWaypoints;
+//
+//					Waypoint wp;
+//					wp.id = id++;
+//					wp.pose = newPose;
+//					wp.maxTranslationalVel = waypoints[i].maxTranslationalVel;
+//					wp.maxAngularVel = waypoints[i].maxAngularVel;
+//
+//					m_waypoints.push_back(wp);
+//
+//					//find tStart, which is distBetweenWaypoints away
+//					if (t >= dist)
+//					{
+//						tStart = t - dist;
+//					}
+//				}
 
-			//if the next waypoint is a special waypoint
-			//add the current waypoint as a end point
-			//to be able to exactly reach the sub goal
-			if (wpNext.type != Waypoint::RobotWaypoint)
+			//add start waypoint
+//			if (i == 0)
+//			{
+//				m_waypoints.push_back(wpCurrent);
+//			}
+
+//			for (auto& it : wpCurrent.trajectory)
+//			{
+//				dist += (pos1 - it.taskPosition).norm();
+//				distAng += (quat.angularDistance(it.taskOrientation));
+//				pos1 = it.taskPosition;
+//				quat = it.taskOrientation;
+//
+//				if (dist > distBetweenWaypoints || distAng > angDistBetweenWaypoints)
+//				{
+//					newPose.setIdentity();
+//					newPose.translation() = it.taskPosition;
+//					newPose.linear() = it.taskOrientation.matrix();
+//
+//					Waypoint wp;
+//					wp.id = id++;
+//					wp.pose = newPose;
+//					wp.maxTranslationalVel = wpCurrent.maxTranslationalVel;
+//					wp.maxAngularVel = wpCurrent.maxAngularVel;
+//					wp.jointPose = it.positions;
+//
+//					//add it to the last waypoint
+//					m_waypoints.back().trajectory = tNew;
+//
+//					m_waypoints.push_back(wp);
+//
+//					tNew.clear();
+//					dist = 0;
+//					distAng = 0;
+//				}
+//
+//				tNew.push_back(it);
+//			}
+
+			for (auto& it : wpCurrent.trajectory)
 			{
-				Waypoint wp(wpCurrent);
-				wp.id = id++;
+//				dist += (pos1 - it.taskPosition).norm();
+//				distAng += (quat.angularDistance(it.taskOrientation));
+//				pos1 = it.taskPosition;
+//				quat = it.taskOrientation;
 
-				m_waypoints.push_back(wp);
-			}
-			else
-			{
-				p1 = wpCurrent.pose;
-				p2 = wpNext.pose;
-				pos1 = p1.translation();
-				pos2 = p2.translation();
-				rot1 = p1.rotation();
-				rot2 = p2.rotation();
-
-				double t = tStart;
-				diff = pos2 - pos1;
-				double dist = diff.norm();
-				diff /= dist;
-
-				while (t < dist)
+				if (tNew.size() > numberOfJointStates)
 				{
 					newPose.setIdentity();
-					newPose.translation() = pos1 + diff * t;
-					newPose.linear() = rot1.slerp(t / dist, rot2).matrix();
-					t += distBetweenWaypoints;
+					newPose.translation() = it.taskPosition;
+					newPose.linear() = it.taskOrientation.matrix();
 
 					Waypoint wp;
 					wp.id = id++;
 					wp.pose = newPose;
-					wp.maxTranslationalVel = waypoints[i].maxTranslationalVel;
-					wp.maxAngularVel = waypoints[i].maxAngularVel;
+					wp.maxTranslationalVel = wpCurrent.maxTranslationalVel;
+					wp.maxAngularVel = wpCurrent.maxAngularVel;
+					wp.jointPose = it.positions;
+
+					//add it to the last waypoint
+					m_waypoints.back().trajectory = tNew;
 
 					m_waypoints.push_back(wp);
 
-					//find tStart, which is distBetweenWaypoints away
-					if (t >= dist)
-					{
-						tStart = t - dist;
-					}
+					tNew.clear();
+					dist = 0;
+					distAng = 0;
 				}
+
+				tNew.push_back(it);
 			}
+
+//			}
 		}
 	}
 
 	//add goal waypoint if necessary
 	if (waypoints.size() > 1 && !m_waypoints.back().pose.isApprox(waypoints.back().pose))
 	{
-		Waypoint wpGoal = waypoints.back();
-		wpGoal.id = id;
-		m_waypoints.push_back(wpGoal);
+//		//create new waypoint
+//		if (tNew.size() > 25)
+//		{
+//			m_waypoints.back().trajectory = tNew;
+//
+//			//		TrajectoryWaypoint& twp = tNew.back();
+//			//
+//			//		newPose.setIdentity();
+//			//		newPose.translation() = twp.taskPosition;
+//			//		newPose.linear() = twp.taskOrientation.matrix();
+//
+//			//both trajectory and joint position might be not available
+//			//due to path database, which adds a start and goal waypoint
+//			//to a path found in the database. These nodes can/might not
+//			//have such information yet.
+//			Waypoint wpGoal = waypoints.back();
+//			wpGoal.id = id;
+//
+//			//		wpGoal.pose = newPose;
+//			//		wpGoal.jointPose = tNew.back().positions;
+//			m_waypoints.push_back(wpGoal);
+//		}
+//		//move last waypoint
+//		else
+//		{
+			Waypoint& wp = m_waypoints.back();
+			wp.trajectory.insert(wp.trajectory.end(), tNew.begin(), tNew.end());
+			wp.pose = waypoints.back().pose;
+			wp.jointPose = KDL::JntArray();
+//		}
+
 	}
+
+	m_maxId = id;
 }
 
 void Path::transform(const Eigen::Affine3d& t)
@@ -514,7 +744,7 @@ boost::shared_ptr<Path> Path::getSubPath(size_t startWaypoint,
 
 	for (size_t i = startWaypoint; i < std::min(goalWaypoint + 1, m_waypoints.size()); ++i)
 	{
-		path->m_waypoints.push_back(m_waypoints[i]);
+		path->append(m_waypoints[i], false);
 	}
 
 	return path;
@@ -571,6 +801,7 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 {
 	static const std_msgs::ColorRGBA green = ais_util::Color::green().toROSMsg();
 	static const std_msgs::ColorRGBA red = ais_util::Color::red().toROSMsg();
+	static const std_msgs::ColorRGBA yellow = ais_util::Color::yellow().toROSMsg();
 	static const std_msgs::ColorRGBA orange = ais_util::Color::orange().toROSMsg();
 	static const std_msgs::ColorRGBA blue = ais_util::Color::blue().toROSMsg();
 
@@ -587,8 +818,8 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 	path.id = id++;
 	path.type = visualization_msgs::Marker::LINE_STRIP;
 	path.action = visualization_msgs::Marker::ADD;
-	path.scale.x = 0.002;
-	path.color = orange;
+	path.scale.x = m_cachedPath ? 0.005 : 0.003;
+	path.color = m_cachedPath ? yellow : orange;
 
 	//node or axis
 	if (plotAxis)
@@ -599,7 +830,7 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 		nodeXMarker.id = id++;
 		nodeXMarker.type = visualization_msgs::Marker::LINE_LIST;
 		nodeXMarker.action = visualization_msgs::Marker::ADD;
-		nodeXMarker.scale.x = 0.005;
+		nodeXMarker.scale.x = 0.001;
 		nodeXMarker.color = red;
 
 		nodeYMarker.header.frame_id = c_frame;
@@ -608,7 +839,7 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 		nodeYMarker.id = id++;
 		nodeYMarker.type = visualization_msgs::Marker::LINE_LIST;
 		nodeYMarker.action = visualization_msgs::Marker::ADD;
-		nodeYMarker.scale.x = 0.005;
+		nodeYMarker.scale.x = 0.001;
 		nodeYMarker.color = green;
 
 		nodeZMarker.header.frame_id = c_frame;
@@ -617,7 +848,7 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 		nodeZMarker.id = id++;
 		nodeZMarker.type = visualization_msgs::Marker::LINE_LIST;
 		nodeZMarker.action = visualization_msgs::Marker::ADD;
-		nodeZMarker.scale.x = 0.005;
+		nodeZMarker.scale.x = 0.001;
 		nodeZMarker.color = blue;
 	}
 	else
@@ -628,7 +859,7 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 		nodeXMarker.id = id++;
 		nodeXMarker.type = visualization_msgs::Marker::POINTS;
 		nodeXMarker.action = visualization_msgs::Marker::ADD;
-		nodeXMarker.scale.x = 0.005;
+		nodeXMarker.scale.x = 0.002;
 		nodeXMarker.color = green;
 	}
 
@@ -696,6 +927,26 @@ void Path::getROSVisualizationMessage(visualization_msgs::MarkerArray& array,
 
 	if (plotPath)
 		array.markers.push_back(path);
+}
+
+int Path::getMaxId() const
+{
+	return m_maxId;
+}
+
+bool Path::isCachedPath() const
+{
+	return m_cachedPath;
+}
+
+void Path::setCachedPath(bool cachedPath)
+{
+	m_cachedPath = cachedPath;
+}
+
+const std::vector<Path::Waypoint>& Path::getWaypoints() const
+{
+	return m_waypoints;
 }
 
 } /* namespace prm_planner */

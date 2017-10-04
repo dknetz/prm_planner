@@ -16,6 +16,7 @@
 #include <eigen_conversions/eigen_kdl.h>
 #include <kdl/chainiksolverpos_nr_jl.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
+
 namespace prm_kinematics_kdl
 {
 
@@ -29,11 +30,11 @@ KDLKinematics::~KDLKinematics()
 
 void KDLKinematics::init(const prm_planner::RobotArm* robot)
 {
-	KDL::Chain chain = robot->getChain();
-	m_fkSolver.reset(new KDL::ChainFkSolverPos_recursive(chain));
-	m_ikVelSolver.reset(new KDL::ChainIkSolverVel_pinv(chain));
-	m_ikSolver.reset(new KDL::ChainIkSolverPos_NR_JL(chain, robot->getChainLimitMin(), robot->getChainLimitMax(), *m_fkSolver, *m_ikVelSolver));
-	m_jacobianSolver.reset(new KDL::ChainJntToJacSolver(chain));
+	m_chain = robot->getChain();
+	m_fkSolver.reset(new KDL::ChainFkSolverPos_recursive(m_chain));
+	m_ikVelSolver.reset(new KDL::ChainIkSolverVel_pinv(m_chain));
+	m_ikSolver.reset(new KDL::ChainIkSolverPos_NR_JL(m_chain, robot->getChainLimitMin(), robot->getChainLimitMax(), *m_fkSolver, *m_ikVelSolver));
+	m_jacobianSolver.reset(new KDL::ChainJntToJacSolver(m_chain));
 }
 
 boost::shared_ptr<prm_planner::Kinematics> KDLKinematics::getCopy(const prm_planner::RobotArm* robot)
@@ -47,16 +48,16 @@ bool KDLKinematics::getJacobian(const KDL::JntArray& jointPosition,
 		KDL::Jacobian& jacobian,
 		int segmentNR)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_jacobianSolver->JntToJac(jointPosition, jacobian, segmentNR) >= 0;
+	KDL::ChainJntToJacSolver solver(m_chain); //no mutex required
+	return solver.JntToJac(jointPosition, jacobian, segmentNR) >= 0;
 }
 
 bool KDLKinematics::getFK(const KDL::JntArray& jointPosition,
 		KDL::Frame& pose,
 		int segmentNR)
 {
-	boost::recursive_mutex::scoped_lock lock(m_mutex);
-	return m_fkSolver->JntToCart(jointPosition, pose, segmentNR) >= 0;
+	KDL::ChainFkSolverPos_recursive fk(m_chain); //create it here, it shouldn't take too long
+	return fk.JntToCart(jointPosition, pose, segmentNR) >= 0;
 }
 
 bool KDLKinematics::getIK(const Eigen::Affine3d& pose,

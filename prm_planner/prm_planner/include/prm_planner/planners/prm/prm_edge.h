@@ -12,7 +12,6 @@
 
 #include <boost/atomic.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <prm_planner_robot/defines.h>
 
 namespace prm_planner
@@ -45,11 +44,10 @@ public:
 	void setIsBlocked(bool isBlocked);
 
 private:
-	mutable boost::recursive_mutex m_mutex;
 	const PRMNode* m_node1;
 	const PRMNode* m_node2;
 
-	bool m_isBlocked;
+	boost::atomic_bool m_isBlocked;
 	int m_id;
 
 	friend class PRM;

@@ -41,6 +41,9 @@ public:
 		Waypoint(const Waypoint& other);
 		Waypoint(const int& id,
 				const Eigen::Affine3d& pose);
+		Waypoint(const int& id,
+				const Eigen::Affine3d& pose,
+				const KDL::JntArray& jointstate);
 
 		const Eigen::Vector3d getTaskPosition() const;
 		const Eigen::Affine3d getTaskPose() const;
@@ -115,6 +118,16 @@ public:
 			const bool clean = false);
 
 	/**
+	 * Adds a waypoint by copy to the front.
+	 *
+	 * @waypoint [in]: the waypoint to add
+	 * @clean [in]: call clean directly, otherwise you should
+	 * 		call it by yourself
+	 */
+	void prepend(const Waypoint& waypoint,
+			const bool clean = false);
+
+	/**
 	 * Adds a path by copy.
 	 *
 	 * @path [in]: the path to add
@@ -137,7 +150,7 @@ public:
 	/**
 	 * Computes additional way points by linear approximation
 	 */
-	void makeDense(const double distBetweenWaypoints);
+	void makeDense(const int numberOfJointStates);
 
 	/**
 	 * Checks whether the path only contains a single
@@ -168,6 +181,7 @@ public:
 	void resize(const size_t size);
 	bool empty() const;
 	void setWaypoints(const std::vector<Waypoint>& waypoints);
+	const std::vector<Waypoint>& getWaypoints() const;
 
 	/**
 	 * Computes the length of the path in cartesian space.
@@ -234,6 +248,9 @@ public:
 	void setTcp(const Eigen::Affine3d& tcp);
 	bool isUseTcp() const;
 	void setUseTcp(bool useTcp);
+	int getMaxId() const;
+	bool isCachedPath() const;
+	void setCachedPath(bool cachedPath);
 
 	/**
 	 * Removes duplicates from the waypoint list.
@@ -244,6 +261,12 @@ public:
 	double getPathLength() const;
 
 	void transform(const Eigen::Affine3d& t);
+
+	/**
+	 * Writes the trajectory fields of the path into the
+	 * file "filename"
+	 */
+	void writeTrajectoryData(const std::string& filename);
 
 	static void save(const std::string& filename,
 			const std::vector<KDL::JntArray>& path);
@@ -287,6 +310,8 @@ private:
 	double m_length;
 	bool m_lengthUpdated;
 	nav_msgs::PathPtr m_rosPath;
+	int m_maxId;
+	bool m_cachedPath;
 	static ros::Publisher m_pub;
 	static bool m_pubInit;
 
