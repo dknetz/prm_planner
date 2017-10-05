@@ -44,8 +44,11 @@ void ProblemDefinitionManager::init(const std::string& type,
 
 	const parameters::ProblemConfig& problem = problems[type];
 
+	LOG_DEBUG("Setup robot");
 	m_robot.reset(new Robot(problem.robotConfig));
 	m_constraint = ConstraintFactory::create(problem.constraint);
+
+	LOG_DEBUG("Loading problem definition");
 
 	//load default problem definition for single arm configurations
 	if (problem.pluginPackage == "prm_planner" && problem.pluginClass == "prm_planner::SingleArmProblemDefinition")
