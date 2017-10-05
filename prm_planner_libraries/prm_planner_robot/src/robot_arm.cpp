@@ -90,6 +90,7 @@ RobotArm::RobotArm(const RobotArmConfig& armConfig,
 	}
 
 	//setup kinematics
+	LOG_DEBUG("Loading kinematics " << c_armConfig.kinematicsClass << " in " << c_armConfig.kinematicsPackage)
 	m_kinematics = Kinematics::load(c_armConfig.kinematicsPackage, c_armConfig.kinematicsClass);
 	m_kinematics->init(this);
 
@@ -99,6 +100,7 @@ RobotArm::RobotArm(const RobotArmConfig& armConfig,
 	m_chainVelocities.resize(m_chainJointNames.size());
 	m_chainCommands.resize(m_chainJointNames.size());
 
+	LOG_INFO("Init robot connection");
 	if (initRobotConnection)
 	{
 		//connect to robot
@@ -109,8 +111,8 @@ RobotArm::RobotArm(const RobotArmConfig& armConfig,
 		usleep(100000);
 	}
 
-//	LOG_DEBUG("Loaded robot model with " << m_robot.getNrOfJoints() << " joints " << m_robot.getNrOfSegments() << " links");
-//	LOG_DEBUG("Loaded chain with " << m_chain.getNrOfJoints() << " joints " << m_chain.getNrOfSegments() << " links");
+	LOG_DEBUG("Loaded robot model with " << m_robot.getNrOfJoints() << " joints " << m_robot.getNrOfSegments() << " links");
+	LOG_DEBUG("Loaded chain with " << m_chain.getNrOfJoints() << " joints " << m_chain.getNrOfSegments() << " links");
 }
 
 RobotArm::~RobotArm()
@@ -144,8 +146,10 @@ void RobotArm::initHardwareInterface()
 	//the FollowJointTrajectory action client
 	else if (c_armConfig.executionInterface == ArmExecutionMode::FollowJointTrajectoryPublisher)
 	{
+		LOG_INFO("Waiting for follow joint trajectory action server on topic " << c_armConfig.followJointTrajectoryTopic);
 		m_actionClient = new FollowJointTrajectoryAC(c_armConfig.followJointTrajectoryTopic, true);
 		m_actionClient->waitForServer();
+		LOG_INFO("Found action server");
 
 		ros::NodeHandle n;
 		m_subJointState = n.subscribe(c_armConfig.jointStateTopic, 1, &RobotArm::receiveJointState, this);
