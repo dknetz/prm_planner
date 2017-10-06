@@ -61,6 +61,9 @@ bool ParameterServer::startSubscribers = true;
 bool ParameterServer::debugInternal = false;
 std::string ParameterServer::problem = "";
 bool ParameterServer::connectedToVRep = false;
+bool ParameterServer::useCollisionDetection = true;
+bool ParameterServer::useTrajectoryOptimization = true;
+bool ParameterServer::usePathDatabase = true;
 parameters::ImageMode ParameterServer::oneImageMode = parameters::Frequently;
 
 //parameters
@@ -123,6 +126,9 @@ bool ParameterServer::loadParameters()
 	GET_PARAMETER_ERROR("general/start_ros_subscribers", startSubscribers);
 	GET_PARAMETER_ERROR("general/problem_definition", problem);
 	GET_PARAMETER_ERROR("general/connected_to_vrep", connectedToVRep);
+	GET_PARAMETER_DEFAULT("general/use_collision_detection", useCollisionDetection, true);
+	GET_PARAMETER_DEFAULT("general/use_trajectory_optimization", useTrajectoryOptimization, true);
+	GET_PARAMETER_DEFAULT("general/use_path_database", usePathDatabase, false);
 	GET_PARAMETER_DEFAULT_ENUM("general/one_image_mode", oneImageMode, parameters::ImageMode, parameters::Frequently);
 
 	m_receiveImage = true;

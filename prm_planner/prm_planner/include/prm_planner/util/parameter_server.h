@@ -53,6 +53,9 @@ public:
 	static bool startRosSpinner;		//do we need a spinner or not
 	static std::string problem;			//defines the problem, must be defined in e.g., problems.yaml
 	static bool connectedToVRep;		//used to mirror the depth images of V-Rep (don't know why this is necessary)
+	static bool useCollisionDetection;	//activate/deactivate collision checks
+	static bool useTrajectoryOptimization;	//use/don't use trajectory optimization
+	static bool usePathDatabase;		//use path database (if true, trajectory optimization is used either way)
 	static bool debugInternal;			//only for internal use!
 	static parameters::ImageMode oneImageMode;		//if you only need one image you can activate it by setting this variable to true (static world)
 

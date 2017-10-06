@@ -758,6 +758,7 @@ void PRMPlanner::concurrentPlan(const bool executeTrajectory)
 
 		p.mode = m_planningMode;
 		p.objectName = m_planningObject;
+		p.useCollisionDetection = ParameterServer::useCollisionDetection;
 //		p.directConnectionRequired
 		if (m_problemDefinition->plan(m_goalPose, path, p))
 		{

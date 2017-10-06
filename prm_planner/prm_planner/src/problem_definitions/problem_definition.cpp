@@ -299,17 +299,20 @@ bool ProblemDefinition::planDefault(const KDL::JntArray& startJoint,
 	}
 
 	//check database if a plan fits
-	path = m_pathDatabase->findBestPlan(currentJointPose, currentTaskPose, goal);
-	if (path.get() != NULL)
+	if (ParameterServer::usePathDatabase)
 	{
-		LOG_ERROR("Check return value of optimizer (i.e. check if optimizable in optimize()");
-		boost::shared_ptr<Path> optimizedPath(new Path(getFrame()));
-
-		TrajectoryOptimizer opt(path, cd, m_robot, shared_from_this());
-		if (opt.optimize(optimizedPath, true))
+		path = m_pathDatabase->findBestPlan(currentJointPose, currentTaskPose, goal);
+		if (path.get() != NULL)
 		{
-			path = optimizedPath;
-			return true;
+			LOG_ERROR("Check return value of optimizer (i.e. check if optimizable in optimize()");
+			boost::shared_ptr<Path> optimizedPath(new Path(getFrame()));
+
+			TrajectoryOptimizer opt(path, cd, m_robot, shared_from_this());
+			if (opt.optimize(optimizedPath, true))
+			{
+				path = optimizedPath;
+				return true;
+			}
 		}
 	}
 	bool result = m_planner->plan(currentJointPose, currentTaskPose, goal, cd, path, params.directConnectionRequired);
@@ -317,21 +320,27 @@ bool ProblemDefinition::planDefault(const KDL::JntArray& startJoint,
 	//optimize trajectory
 	if (result)
 	{
-		//add the path to the database
-		m_pathDatabase->addPath(path);
-
-		//run prune from time to time
-
-		//optimization
-		TrajectoryOptimizer opt(path, cd, m_robot, shared_from_this());
-
-		boost::shared_ptr<Path> optimizedPath(new Path(getFrame()));
-		if (!opt.optimize(optimizedPath, false))
+		if (ParameterServer::usePathDatabase)
 		{
-			return false;
+			//add the path to the database
+			m_pathDatabase->addPath(path);
+
+			//run prune from time to time
 		}
 
-		path = optimizedPath;
+		//optimization
+		if (ParameterServer::useTrajectoryOptimization)
+		{
+			TrajectoryOptimizer opt(path, cd, m_robot, shared_from_this());
+
+			boost::shared_ptr<Path> optimizedPath(new Path(getFrame()));
+			if (!opt.optimize(optimizedPath, false))
+			{
+				return false;
+			}
+
+			path = optimizedPath;
+		}
 		return true;
 	}
 	else
