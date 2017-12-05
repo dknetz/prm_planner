@@ -286,7 +286,7 @@ void PRM::publish()
 		edgeMarker.type = visualization_msgs::Marker::LINE_LIST;
 		edgeMarker.action = visualization_msgs::Marker::ADD;
 		edgeMarker.scale.x = 0.002;
-		edgeMarker.color = green;
+		edgeMarker.color = red;
 
 		visualization_msgs::Marker edgeMarkerInactive;
 		edgeMarkerInactive.header.frame_id = c_frame;
@@ -296,7 +296,7 @@ void PRM::publish()
 		edgeMarkerInactive.type = visualization_msgs::Marker::LINE_LIST;
 		edgeMarkerInactive.action = visualization_msgs::Marker::ADD;
 		edgeMarkerInactive.scale.x = 0.002;
-		edgeMarkerInactive.color = red;
+		edgeMarkerInactive.color = green;
 
 		visualization_msgs::Marker edgeMarkerInvisible;
 		edgeMarkerInvisible.header.frame_id = c_frame;

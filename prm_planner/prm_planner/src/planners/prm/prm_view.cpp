@@ -64,6 +64,7 @@ const PRMNode* PRMView::addPose(const Eigen::Affine3d& pose,
 	{
 		if (activeConnections > 0)
 		{
+			LOG_INFO("Found connections to " << activeConnections << " nodes!");
 			NodeData& data = m_nodeData[node->getId()];
 			data.m_node = node;
 			data.m_jointPose = jointPose;
@@ -72,12 +73,14 @@ const PRMNode* PRMView::addPose(const Eigen::Affine3d& pose,
 		}
 		else if (sameNode != NULL)
 		{
+			LOG_INFO("Same node => no new connections were added!");
 			DELETE_VAR(node);
 			setJointPose(sameNode, jointPose);
 			return sameNode;
 		}
 		else
 		{
+			LOG_WARNING("No connections were found! Maybe the visibility distance is too small.");
 			DELETE_VAR(node);
 			return NULL;
 		}
@@ -103,12 +106,14 @@ const PRMNode* PRMView::setStartPose(const int id,
 const PRMNode* PRMView::setStartPose(const Eigen::Affine3d& startPose,
 		const KDL::JntArray& jointPose)
 {
+	LOG_INFO("Adding Start Pose...");
 	return addPose(startPose, jointPose);
 }
 
 const PRMNode* PRMView::setGoalPose(const Eigen::Affine3d& goalPose)
 {
 	static const KDL::JntArray dummy;
+	LOG_INFO("Adding Goal Pose...");
 	return addPose(goalPose, dummy);
 }
 
