@@ -1,0 +1,36 @@
+<launch>
+	<!-- Given the published joint states, publish tf for the robot links -->
+	<group ns="omnirob_lbr">
+		<param name="robot_description" textfile="$(find omnirob_description)/urdf/omnirob_lbr_sdh2_extended.urdf" />
+
+		<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
+			<param name="tf_prefix" type="string" value="omnirob_lbr" />
+		</node>
+
+		<node name="joint_state_publisher" pkg="extended_joint_state_publisher" type="joint_state_publisher">
+			<param name="use_gui" type="bool" value="true" />
+			<param name="rate" type="int" value="60" />
+			<rosparam param="joints_to_publish">["sdh2_thumb_3_joint", "sdh2_thumb_2_joint", "sdh2_thumb_1_joint", "sdh2_finger_23_joint", "sdh2_finger_22_joint", "sdh2_finger_21_joint", "sdh2_finger_13_joint", "sdh2_finger_12_joint", "sdh2_knuckle_joint"]</rosparam>
+		</node>
+
+		<param name="collision_matrix" type="string" value="$(find omnirob_description)/collision_matrices/omnirob_lbr_sdh2.cm" />
+	</group>
+
+	<node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find prm_planner_simple_omnirob)/rviz/example.rviz" output="screen" />
+
+	<!-- Adapt the namespace to load the needed parameters. By changing it you can also start multiple planners with different configurations -->
+	<group ns="/prm_planner">
+		<rosparam command="load" file="$(find prm_planner_simple_omnirob)/config/params.yaml" />
+		<rosparam command="load" ns="problem_definitions" file="$(find prm_planner_example_configs)/config/problems.yaml" />
+		<rosparam command="load" ns="robots" file="$(find prm_planner_example_configs)/config/robots.yaml" />
+
+		<!-- Setting paramters for fake execution -->
+		<param name="robot_fake_interface/joint_topic" type="string" value="/omnirob_lbr/joint_states" />
+		<rosparam param="robot_fake_interface/start_joint_names">["lbr_7_joint", "lbr_4_joint", "lbr_3_joint", "lbr_6_joint", "lbr_5_joint", "lbr_2_joint", "lbr_1_joint"]</rosparam>
+		<rosparam param="robot_fake_interface/start_joint_values">[-0.009054135549866718, -1.7277041339935684, 0.0005714048004091812, -0.8498848111656808, 0.013014481122931685, 0.6823897492819077, 0.009337249518826385]</rosparam>
+
+		<node name="prm_planner" pkg="prm_planner" type="prm_planner" output="screen" />
+	</group>
+
+	<!-- <node name="planning_scene_publisher" pkg="prm_planner_simple_omnirob" type="create_boxes" /> -->
+</launch>

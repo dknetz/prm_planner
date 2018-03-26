@@ -7,11 +7,11 @@
  * 	  Filename: gripper_sdh.cpp
  */
 
-#include <schunk_wsg/schunk_wsg_gripper_interface.h>
+#include <prm_schunk_wsg/schunk_wsg_gripper_interface.h>
 #include <ais_log/log.h>
 #include <pluginlib/class_list_macros.h>
 
-namespace schunk_wsg
+namespace prm_schunk_wsg
 {
 
 SchunkWSGGripperInterface::SchunkWSGGripperInterface() :
@@ -74,6 +74,6 @@ bool SchunkWSGGripperInterface::close()
 #endif
 }
 
-} /* namespace schunk_wsg */
+} /* namespace prm_schunk_wsg */
 
-PLUGINLIB_EXPORT_CLASS(schunk_wsg::SchunkWSGGripperInterface, prm_planner::GripperInterface)
+PLUGINLIB_EXPORT_CLASS(prm_schunk_wsg::SchunkWSGGripperInterface, prm_planner::GripperInterface)

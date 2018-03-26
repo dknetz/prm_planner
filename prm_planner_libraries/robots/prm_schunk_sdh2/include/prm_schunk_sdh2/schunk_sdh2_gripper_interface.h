@@ -10,33 +10,27 @@
 #ifndef HCF1D5BA6_E5C7_482B_B196_1DDC6389C2C3
 #define HCF1D5BA6_E5C7_482B_B196_1DDC6389C2C3
 
-#include <actionlib/client/simple_action_client.h>
 #include <prm_planner_robot/gripper_interface.h>
+#include <ros/ros.h>
 
-#ifdef FOUND_WSG
-#include <wsg_gripper/GripperCommandAction.h>
-#endif
-
-namespace schunk_wsg
+namespace prm_schunk_sdh2
 {
 
-class SchunkWSGGripperInterface: public prm_planner::GripperInterface
+class SchunkSDH2GripperInterface: public prm_planner::GripperInterface
 {
 public:
-	SchunkWSGGripperInterface();
-	virtual ~SchunkWSGGripperInterface();
+	SchunkSDH2GripperInterface();
+	virtual ~SchunkSDH2GripperInterface();
 
 	virtual void init(GripperInterfaceParameters& parameters);
 
 	virtual bool open();
-		virtual bool close();
+	virtual bool close();
 
 private:
-#ifdef FOUND_WSG
-		actionlib::SimpleActionClient<wsg_gripper::GripperCommandAction>* m_actionClient;
-#endif
+	ros::ServiceClient m_service;
 };
 
-} /* namespace schunk_wsg */
+} /* namespace prm_schunk_sdh2 */
 
 #endif /* HCF1D5BA6_E5C7_482B_B196_1DDC6389C2C3 */

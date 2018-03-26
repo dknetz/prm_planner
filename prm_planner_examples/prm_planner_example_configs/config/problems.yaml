@@ -1,6 +1,7 @@
 names:
 - single_arm_iiwa
 - right_arm_pr2
+- single_arm_omnirob
 problems:
     single_arm_iiwa:
         robot: iiwa
@@ -8,7 +9,7 @@ problems:
         plugin_package: prm_planner
         plugin_class: prm_planner::SingleArmProblemDefinition
         planning:
-            planner_type: prm_a_star #prm_a_star database_cache
+            planner_type: prm_a_star
             constraint: xyzrpy
             planning_frame: iiwa/iiwa_base_link
             prm:
@@ -25,7 +26,7 @@ problems:
         plugin_package: prm_planner
         plugin_class: prm_planner::SingleArmProblemDefinition
         planning:
-            planner_type: prm_a_star #prm_a_star database_cache
+            planner_type: prm_a_star
             constraint: xyzrpy
             planning_frame: pr2/torso_lift_link
             prm:
@@ -36,3 +37,18 @@ problems:
             rrt:
                 sample_goal: 0.2
                 max_expansion_distance: 0.1
+    single_arm_omnirob:
+        robot: omnirob
+        root_frame: /map
+        plugin_package: prm_planner
+        plugin_class: prm_planner::SingleArmProblemDefinition
+        planning:
+            planner_type: prm_a_star
+            planning_frame: /omnirob_lbr/lbr_0_link
+            constraint: y_down
+            prm:
+                filename: /tmp/prm_omnirob.prm
+                save: true
+                size: 500
+                visibility_distance: 0.3
+                min_height: 0.0

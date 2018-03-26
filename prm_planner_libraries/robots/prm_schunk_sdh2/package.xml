@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-	<name>schunk_sdh2</name>
+	<name>prm_schunk_sdh2</name>
 	<version>1.0.0</version>
-	<description>The schunk_sdh2 package</description>
+	<description>The prm_schunk_sdh2 package</description>
 
 	<!-- One maintainer tag required, multiple allowed, one person per tag -->
 	<!-- Example: -->
@@ -50,6 +50,6 @@
 
 	<!-- The export tag contains other, unspecified, tags -->
 	<export>
-		<prm_planner plugin="${prefix}/schunk_sdh2_plugin.xml" />
+		<prm_planner plugin="${prefix}/prm_schunk_sdh2_plugin.xml" />
 	</export>
 </package>

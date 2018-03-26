@@ -1,7 +1,0 @@
-<library path="lib/libschunk_wsg">
-	<class type="schunk_wsg::SchunkWSGGripperInterface" base_class_type="prm_planner::GripperInterface">
-		<description>
-			Schunk WSG Gripper Interface
-		</description>
-	</class>
-</library>

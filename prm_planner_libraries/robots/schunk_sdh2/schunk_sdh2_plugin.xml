@@ -1,7 +1,0 @@
-<library path="lib/libschunk_sdh2">
-	<class type="schunk_sdh2::SchunkSDH2GripperInterface" base_class_type="prm_planner::GripperInterface">
-		<description>
-			Schunk SDH2 Gripper Interface
-		</description>
-	</class>
-</library>

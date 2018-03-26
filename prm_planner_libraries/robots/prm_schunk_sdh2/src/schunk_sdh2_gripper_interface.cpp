@@ -7,7 +7,7 @@
  * 	  Filename: gripper_sdh.cpp
  */
 
-#include <schunk_sdh2/schunk_sdh2_gripper_interface.h>
+#include <prm_schunk_sdh2/schunk_sdh2_gripper_interface.h>
 #include <ais_log/log.h>
 #include <pluginlib/class_list_macros.h>
 
@@ -15,7 +15,7 @@
 #include <sdh2_hand/SDHAction.h>
 #endif
 
-namespace schunk_sdh2
+namespace prm_schunk_sdh2
 {
 
 SchunkSDH2GripperInterface::SchunkSDH2GripperInterface() :
@@ -70,6 +70,6 @@ bool SchunkSDH2GripperInterface::close()
 #endif
 }
 
-} /* namespace schunk_sdh2 */
+} /* namespace prm_schunk_sdh2 */
 
-PLUGINLIB_EXPORT_CLASS(schunk_sdh2::SchunkSDH2GripperInterface, prm_planner::GripperInterface)
+PLUGINLIB_EXPORT_CLASS(prm_schunk_sdh2::SchunkSDH2GripperInterface, prm_planner::GripperInterface)
