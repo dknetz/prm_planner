@@ -31,8 +31,8 @@ robots:
                     - sdh2_thumb_3_joint
                     min_grasping_height: 0.1
                     topic: /iiwa/sdh_action
-                    interface_package: schunk_sdh2
-                    interface_class: schunk_sdh2::SchunkSDH2GripperInterface
+                    interface_package: prm_schunk_sdh2
+                    interface_class: prm_schunk_sdh2::SchunkSDH2GripperInterface
                     grasp_radius: -0.01
                     grasp_pre_distance: 0.16
                     drop_pre_distance: 0.05
@@ -65,8 +65,8 @@ robots:
                     - sdh2_thumb_3_joint
                     min_grasping_height: 0.13
                     topic: /omnirob_lbr/sdh_action
-                    interface_package: schunk_sdh2
-                    interface_class: schunk_sdh2::SchunkSDH2GripperInterface
+                    interface_package: prm_schunk_sdh2
+                    interface_class: prm_schunk_sdh2::SchunkSDH2GripperInterface
                     grasp_radius: -0.01
                     grasp_pre_distance: 0.2
                     drop_pre_distance: 0.05
